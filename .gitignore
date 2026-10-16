@@ -1,0 +1,30 @@
+# Streamlit secrets (JANGAN di-upload!)
+.streamlit/secrets.toml
+.streamlit/atlas-credentials.env
+.streamlit/secrets_lama.toml.bak
+**/secrets.toml
+
+# Backup files
+*.bak
+*_backup.py
+*_lama.toml.bak
+
+# Hasil analisis (bisa dibuat ulang)
+hasil_analisis/
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data besar (opsional)
+DATA THESIS.xlsx
+*.xlsx
+
+# VS Code settings (opsional)
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
