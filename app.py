@@ -51,7 +51,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN SIDEBAR PERSIS GAMBAR)
+# PAGE CONFIG & CSS (SIDEBAR PERSIS GAMBAR)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -72,7 +72,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 /* KUNCI SIDEBAR AGAR SELALU TERBUKA & ESTETIK */
 [data-testid="collapsedControl"] { display: none; } 
 [data-testid="stSidebar"] {
-    /* Warna background hijau gelap dengan efek gelombang di bawah */
     background-color: #006B62 !important;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,60 Q30,90 60,60 T100,60 L100,100 L0,100 Z" fill="%23004d45"/></svg>') !important;
     background-repeat: no-repeat !important;
@@ -88,9 +87,8 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* SIDEBAR LOGO */
 .sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
-.sb-logo-icon { font-size: 2.5rem; }
-.sb-logo-text h2 { margin: 0; font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; }
-.sb-logo-text p { margin: 0; font-size: 0.75rem; color: #A7F3D0; line-height: 1.2; }
+.sb-logo-icon { display: flex; align-items: center; justify-content: center; }
+.sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
 /* NAVIGASI RADIO BUTTON (Menu Putih saat Aktif) */
 [data-testid="stSidebar"] .stRadio > div { gap: 0.3rem; padding: 0 15px;}
@@ -100,7 +98,7 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
     cursor: pointer; transition: all 0.2s; border: none;
 }
 [data-testid="stSidebar"] .stRadio label:hover { background-color: rgba(255,255,255,0.1); }
-[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none; } /* Sembunyikan bulatan radio */
+[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none; }
 [data-testid="stSidebar"] .stRadio input:checked + div + div label {
     background-color: white; color: #006B62 !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -328,20 +326,23 @@ if not st.session_state.logged_in:
     st.stop()
 
 with st.sidebar:
-    # Logo
+    # Logo Ikon Toga Putih
     st.markdown("""
     <div class="sb-logo">
-        <div class="sb-logo-icon">🎓</div>
+        <div class="sb-logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px">
+                <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+            </svg>
+        </div>
         <div class="sb-logo-text">
-            <h2>Dashboard</h2>
-            <p>Prestasi Akademik Siswa<br>SMP Negeri 6 Salatiga</p>
+            <h2>SAA.Analytics</h2>
         </div>
     </div>
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # Navigasi Radio Button (Agar menu yang aktif berwarna putih)
-    menu_options = ["🏠 Beranda", "👥 Data Siswa", "🕸️ Analisis Kausal", "📈 Prediksi", "💡 Penjelasan (SHAP)", "📋 Laporan"]
+    # Navigasi Radio Button
+    menu_options = ["🏠 Beranda", "👥 Data Siswa", "🔍 Pengaruh Faktor", "📈 Prediksi", "📋 Laporan"]
     if st.session_state.user_role == "admin":
         menu_options.append("⚙️ Pengaturan Admin")
         menu_options.append("🚪 Logout")
@@ -349,12 +350,13 @@ with st.sidebar:
         menu_options.append("⚙️ Pengaturan")
         menu_options.append("🚪 Logout")
 
-    # Tentukan index default berdasarkan current_page
     mapping_menu = {
-        "🏠 Beranda": "home", "👥 Data Siswa": "monitoring", "🕸️ Analisis Kausal": "kausal",
-        "📈 Prediksi": "prediksi", "💡 Penjelasan (SHAP)": "shap", "📋 Laporan": "rekomendasi",
+        "🏠 Beranda": "home", "👥 Data Siswa": "monitoring", "🔍 Pengaruh Faktor": "kausal",
+        "📈 Prediksi": "prediksi", "📋 Laporan": "rekomendasi", 
         "⚙️ Pengaturan": "pengaturan", "⚙️ Pengaturan Admin": "admin_users"
     }
+    
+    # Dapatkan index menu yang aktif
     default_idx = 0
     for i, m in enumerate(menu_options):
         if mapping_menu.get(m) == st.session_state.current_page:
@@ -363,7 +365,7 @@ with st.sidebar:
 
     menu_choice = st.radio("Menu", menu_options, index=default_idx, label_visibility="collapsed")
 
-    # Routing aksi
+    # Aksi pilihan menu
     if menu_choice == "🚪 Logout":
         add_log("Logout")
         st.session_state.logged_in = False
@@ -375,7 +377,7 @@ with st.sidebar:
             st.session_state.current_page = new_page
             st.rerun()
 
-    # Ilustrasi Buku & Quote
+    # Quote & Ilustrasi Buku
     st.markdown("""
     <div class="sb-bottom">
         <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
@@ -385,7 +387,7 @@ with st.sidebar:
 
 
 # ================================================================
-# HALAMAN BERANDA (SAPAAN NAMA LENGKAP)
+# HALAMAN BERANDA
 # ================================================================
 if st.session_state.current_page == "home":
     st.markdown(f"""
@@ -414,7 +416,7 @@ if st.session_state.current_page == "home":
         min_val = df['Nilai Akademik'].min() if not df.empty else 0
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon purple">📉</div><div class="kpi-info"><h4>Nilai Terendah</h4><h2>{min_val:.2f}</h2><p>Skor terendah yang dicapai</p></div></div>', unsafe_allow_html=True)
 
-    # Progress Bar Kuesioner (Hanya untuk Guru)
+    # Progress Bar Kuesioner
     if st.session_state.user_role != "admin" and not df.empty:
         total_siswa = len(df)
         sudah_isi = len(df[df["Self-Efficacy"] > 0])
@@ -430,7 +432,7 @@ if st.session_state.current_page == "home":
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
-        ("🔬", "Analisis Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
+        ("🔍", "Pengaruh Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
         ("💡", "Rekomendasi", "Saran tindak lanjut & laporan.", "rekomendasi"),
         ("⚙️", "Pengaturan", "Ubah password & profil.", "pengaturan"),
         ("ℹ️", "Tentang", "Info metode Hybrid Causal-Explainable.", "tentang")
@@ -453,19 +455,103 @@ if st.session_state.current_page == "home":
                 goto_page(page)
 
 # ================================================================
-# PLACEHOLDER UNTUK MODUL LAIN (SESUAIKAN DENGAN KEBUTUHAN)
+# MODUL 03: PENGARUH FAKTOR (GABUNGAN KAUSAL & SHAP)
+# ================================================================
+elif st.session_state.current_page == "kausal":
+    st.title("🔍 Pengaruh Faktor terhadap Nilai")
+    st.write("Halaman ini menjelaskan faktor apa saja yang mempengaruhi nilai siswa, baik dari segi **sebab-akibat** (faktor yang jika diperbaiki bisa menaikkan nilai) maupun dari segi **prediksi** (faktor yang paling sering digunakan sistem untuk menebak nilai).")
+
+    tab_sekolah, tab_siswa = st.tabs(["🏫 Gambaran Umum Sekolah", "👤 Analisis Per Siswa"])
+
+    with tab_sekolah:
+        st.markdown("### 1. Faktor yang Jika Diperbaiki Bisa Menaikkan Nilai (Dampak Sebab-Akibat)")
+        st.info("Grafik ini menunjukkan besarnya dampak (dalam poin nilai) jika suatu faktor ditingkatkan. Batang hijau (ke kanan) berarti menaikkan nilai, batang merah (ke kiri) berarti menurunkan nilai.")
+        
+        df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Dampak (Poin)": list(PENGARUH_DATA.values())}).sort_values("Dampak (Poin)")
+        
+        fig1 = px.bar(df_ate, x="Dampak (Poin)", y="Faktor", orientation='h', 
+                      color="Dampak (Poin)", color_continuous_scale="RdBu",
+                      labels={"Dampak (Poin)": "Dampak terhadap Nilai"})
+        fig1.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        st.plotly_chart(fig1, use_container_width=True)
+
+        st.markdown("### 2. Faktor yang Paling Sering Dipakai untuk Memprediksi Nilai (Tingkat Kepentingan)")
+        st.info("Grafik ini menunjukkan seberapa sering sistem komputer menggunakan faktor tersebut untuk memprediksi nilai siswa. Semakin panjang batangnya, semakin penting faktor tersebut dalam prediksi.")
+        
+        df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Tingkat Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Tingkat Kepentingan")
+        
+        fig2 = px.bar(df_shap, x="Tingkat Kepentingan", y="Faktor", orientation='h', 
+                      color_discrete_sequence=['#0D9488'],
+                      labels={"Tingkat Kepentingan": "Skor Kepentingan"})
+        fig2.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        st.plotly_chart(fig2, use_container_width=True)
+
+        st.markdown("### 💡 Kesimpulan untuk Guru")
+        st.success("Berdasarkan analisis di atas, **Self-Efficacy Akademik** dan **Keterlibatan Orang Tua** adalah dua faktor paling kuat yang bisa menaikkan nilai siswa sekaligus paling penting dalam memprediksi nilai. Fokuskan intervensi sekolah pada dua aspek ini.")
+
+    with tab_siswa:
+        st.markdown("### Analisis Profil Siswa Spesifik")
+        df_all = pd.DataFrame(st.session_state.database_siswa)
+        if df_all.empty:
+            st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
+            st.stop()
+            
+        df_siswa = df_all[df_all["Self-Efficacy"] > 0]
+        if df_siswa.empty:
+            st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
+            st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
+            st.stop()
+
+        opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
+        siswa_terpilih = st.selectbox("Pilih Siswa untuk Dianalisis", opsi_siswa)
+        idx = opsi_siswa.index(siswa_terpilih)
+        b = df_siswa.iloc[idx]
+
+        nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
+        profil = {
+            "Self-Efficacy Akademik": float(b["Self-Efficacy"]), "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
+            "Harapan Orang Tua": float(b["Harapan Ortu"]), "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
+            "Motivasi Belajar": float(b["Motivasi"]), "Kecemasan Akademik": float(b["Kecemasan"]),
+            "Fasilitas Sekolah": float(b["Fasilitas"]), "Kemalasan Belajar": float(b["Kemalasan"]),
+        }
+
+        selisih, kontribusi = analisis_kausal(nilai, profil)
+
+        st.markdown(f"#### Profil Analisis: **{nama}**")
+        st.info(f"Nilai Rata-rata: **{nilai:.2f}** | Posisi vs Rata-rata Sekolah: **{selisih:+.2f} poin**")
+
+        df_k = pd.DataFrame([
+            {"Faktor": k, "Nilai Siswa": profil[k], "Rata-rata Sekolah": BASELINE_ASPEK[k],
+             "Selisih": profil[k] - BASELINE_ASPEK[k], "Dampak (Poin)": v}
+            for k, v in kontribusi.items()
+        ]).sort_values("Dampak (Poin)")
+
+        # Radar Chart
+        st.markdown("**Radar Chart: Perbandingan Profil Siswa vs Rata-rata Sekolah**")
+        df_radar = pd.DataFrame({"Faktor": list(profil.keys()), "Nilai Siswa": list(profil.values()), "Rata-rata Sekolah": [BASELINE_ASPEK[k] for k in profil.keys()]})
+        
+        fig_radar = go.Figure()
+        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Rata-rata Sekolah"], theta=df_radar["Faktor"], fill='toself', name='Rata-rata Sekolah', line_color='#94A3B8'))
+        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#0D9488'))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+        # Bar Chart
+        st.markdown("**Grafik Dampak Faktor (Poin)**")
+        fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
+        fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        st.markdown("**Tabel Detail**")
+        st.dataframe(df_k, use_container_width=True, hide_index=True)
+
+# ================================================================
+# MODUL PREDIKSI (PLACEHOLDER)
 # ================================================================
 elif st.session_state.current_page == "prediksi":
-    st.title("📈 Prediksi")
+    st.title("📈 Prediksi Nilai Siswa")
     st.info("Halaman ini berisi prediksi nilai siswa berdasarkan profil 8 faktor.")
-    # (Logika prediksi bisa ditambahkan di sini)
-
-elif st.session_state.current_page == "shap":
-    st.title("💡 Penjelasan (SHAP)")
-    st.info("Halaman ini berisi visualisasi SHAP untuk penjelasan kontribusi fitur secara global.")
-    df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh")
-    fig = px.bar(df_ate, x="Pengaruh", y="Faktor", orientation='h', color="Pengaruh", color_continuous_scale="RdBu")
-    st.plotly_chart(fig, use_container_width=True)
+    st.write("*(Fitur ini sedang dalam pengembangan)*")
 
 # ================================================================
 # MODUL ADMIN: MANAJEMEN PENGGUNA
@@ -662,66 +748,7 @@ elif st.session_state.current_page == "monitoring":
                 st.rerun()
 
 # ================================================================
-# MODUL 03: ANALISIS FAKTOR
-# ================================================================
-elif st.session_state.current_page == "kausal":
-    st.title("🔬 Analisis Faktor Siswa")
-    df_all = pd.DataFrame(st.session_state.database_siswa)
-    if df_all.empty:
-        st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
-        st.stop()
-        
-    df_siswa = df_all[df_all["Self-Efficacy"] > 0]
-    if df_siswa.empty:
-        st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
-        st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
-        st.stop()
-
-    opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
-    siswa_terpilih = st.selectbox("Pilih Siswa untuk Dianalisis", opsi_siswa)
-    idx = opsi_siswa.index(siswa_terpilih)
-    b = df_siswa.iloc[idx]
-
-    nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
-    profil = {
-        "Self-Efficacy Akademik": float(b["Self-Efficacy"]), "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
-        "Harapan Orang Tua": float(b["Harapan Ortu"]), "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
-        "Motivasi Belajar": float(b["Motivasi"]), "Kecemasan Akademik": float(b["Kecemasan"]),
-        "Fasilitas Sekolah": float(b["Fasilitas"]), "Kemalasan Belajar": float(b["Kemalasan"]),
-    }
-
-    selisih, kontribusi = analisis_kausal(nilai, profil)
-
-    st.markdown(f"### Profil Analisis: **{nama}**")
-    st.info(f"Nilai Rata-rata: **{nilai:.2f}** | Posisi vs Rata-rata Sekolah: **{selisih:+.2f} poin**")
-
-    df_k = pd.DataFrame([
-        {"Faktor": k, "Nilai Siswa": profil[k], "Rata-rata Sekolah": BASELINE_ASPEK[k],
-         "Selisih": profil[k] - BASELINE_ASPEK[k], "Dampak (Poin)": v}
-        for k, v in kontribusi.items()
-    ]).sort_values("Dampak (Poin)")
-
-    # Radar Chart
-    st.markdown("**Radar Chart: Perbandingan Profil Siswa vs Rata-rata Sekolah**")
-    df_radar = pd.DataFrame({"Faktor": list(profil.keys()), "Nilai Siswa": list(profil.values()), "Rata-rata Sekolah": [BASELINE_ASPEK[k] for k in profil.keys()]})
-    
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(r=df_radar["Rata-rata Sekolah"], theta=df_radar["Faktor"], fill='toself', name='Rata-rata Sekolah', line_color='#94A3B8'))
-    fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#0D9488'))
-    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
-    st.plotly_chart(fig_radar, use_container_width=True)
-
-    # Bar Chart
-    st.markdown("**Grafik Dampak Faktor (Poin)**")
-    fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
-    fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.markdown("**Tabel Detail**")
-    st.dataframe(df_k, use_container_width=True, hide_index=True)
-
-# ================================================================
-# MODUL 04: REKOMENDASI
+# MODUL 04: REKOMENDASI & LAPORAN
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
     st.title("💡 Rekomendasi & Laporan")
