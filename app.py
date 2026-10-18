@@ -110,18 +110,28 @@ for key, val in {
     if key not in st.session_state: st.session_state[key] = val
 
 def reload_data():
+    """Memuat ulang data HANYA untuk guru yang sedang login."""
     if st.session_state.user_nama:
         st.session_state.database_siswa = load_database(st.session_state.user_nama)
+        # Memuat log HANYA milik user ini
+        st.session_state.log = load_log(user=st.session_state.user_nama)
+    else:
+        st.session_state.log = []
+        
     st.session_state.config = load_config()
-    st.session_state.log = load_log()
     st.session_state.users = load_users()
 
 if st.session_state.config is None:
     reload_data()
 
 def add_log(aksi, detail=""):
-    tambah_log({"waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "user": st.session_state.user_nama or "-", "aksi": aksi, "detail": detail})
+    tambah_log({
+        "waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "user": st.session_state.user_nama or "-", 
+        "role": st.session_state.user_role or "-",
+        "aksi": aksi, 
+        "detail": detail
+    })
 
 def goto_page(page):
     st.session_state.current_page = page
@@ -288,11 +298,11 @@ if st.session_state.current_page == "home":
         avg = df["Nilai Akademik"].mean() if not df.empty else 0
         st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{avg:.2f}</div><div class="metric-lbl">Rata-rata Kelas</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(st.session_state.log)}</div><div class="metric-lbl">Aktivitas</div></div>', unsafe_allow_html=True)
+        # Angka ini sekarang HANYA menghitung log milik user ini
+        st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(st.session_state.log)}</div><div class="metric-lbl">Aktivitas Anda</div></div>', unsafe_allow_html=True)
 
     st.markdown("### Modul Anda")
     
-    # Urutan modul default
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
@@ -301,7 +311,6 @@ if st.session_state.current_page == "home":
         ("⚙️", "Pengaturan", "Pengaturan sistem.", "pengaturan")
     ]
     
-    # KHUSUS ADMIN: TAMBAH MENU MANAJEMEN DI URUTAN TERAKHIR
     if st.session_state.user_role == "admin":
         mods.append(("👥", "Manajemen Pengguna", "Setujui akun, reset password, & hapus akun.", "admin_users"))
         
@@ -373,6 +382,21 @@ elif st.session_state.current_page == "admin_users":
                             st.rerun()
                 else:
                     st.info("Akun Super Admin (Terkunci).")
+
+    # 3. Pantau Semua Log (Khusus Admin)
+    st.markdown("---")
+    st.markdown("### 📋 Pantau Semua Log Aktivitas (Global)")
+    st.write("Sebagai Admin, Anda dapat melihat seluruh aktivitas sistem di sini.")
+    if st.button("Muat Semua Log Sistem"):
+        # Memanggil load_log tanpa parameter user akan mengambil semua log
+        all_logs = load_log(user=None) 
+        if all_logs:
+            df_log = pd.DataFrame(all_logs)
+            # Rapikan kolom yang ditampilkan
+            df_log = df_log[["waktu", "user", "role", "aksi"]]
+            st.dataframe(df_log, use_container_width=True, hide_index=True)
+        else:
+            st.info("Belum ada log sama sekali.")
 
 # ================================================================
 # MODUL 01: INPUT & UPLOAD (DIGABUNG)
@@ -521,7 +545,7 @@ elif st.session_state.current_page == "pengaturan":
             st.rerun()
             
     with c2:
-        st.markdown("### Log Aktivitas Terakhir")
+        st.markdown("### Log Aktivitas Terakhir (Milik Anda)")
         if st.session_state.log:
             df_log = pd.DataFrame(st.session_state.log[:5])[["waktu", "aksi"]]
             st.dataframe(df_log, use_container_width=True, hide_index=True)

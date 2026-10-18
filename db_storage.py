@@ -99,8 +99,13 @@ def load_config():
 def save_config(cfg):
     _db().config.replace_one({"_id": "main"}, {**cfg, "_id": "main"}, upsert=True)
 
-def load_log(limit=200):
-    return list(_db().log.find({}, {"_id": 0}).sort("waktu", -1).limit(limit))
+def load_log(user=None, limit=200):
+    """Memuat log. Jika 'user' diisi, hanya memuat log milik user tersebut."""
+    query = {}
+    if user:
+        query["user"] = user
+        
+    return list(_db().log.find(query, {"_id": 0}).sort("waktu", -1).limit(limit))
 
 def save_log(log_list):
     col = _db().log
