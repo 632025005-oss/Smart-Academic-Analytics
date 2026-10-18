@@ -188,7 +188,7 @@ def halaman_login():
                     users = load_users()
                     if username in users and verify_password(password, users[username]["password"]):
                         if users[username].get("status") == "pending":
-                            st.warning("⏳ Akun Anda belum disetujui. Silakan hubungi Admin/Regina.")
+                            st.warning("⏳ Akun Anda belum disetujui. Silakan hubungi Admin.")
                         elif users[username].get("status") == "rejected":
                             st.error("❌ Akun Anda ditolak oleh Admin.")
                         else:
@@ -218,11 +218,11 @@ def halaman_login():
                     else:
                         users[reg_user] = {
                             "password": hash_password(reg_pw), "nama": reg_nama, "role": reg_role,
-                            "status": "pending",  # <--- STATUS PENDING
+                            "status": "pending", 
                             "created": datetime.now().strftime("%Y-%m-%d %H:%M")
                         }
                         save_users(users)
-                        st.success("Pendaftaran berhasil! Akun Anda menunggu persetujuan Admin/Regina.")
+                        st.success("Pendaftaran berhasil! Akun Anda menunggu persetujuan Admin.")
 
         with tab_siswa:
             st.info("Isi kuesioner ini dengan jujur. Data akan masuk ke sistem guru Anda.")
@@ -291,6 +291,8 @@ if st.session_state.current_page == "home":
         st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(st.session_state.log)}</div><div class="metric-lbl">Aktivitas</div></div>', unsafe_allow_html=True)
 
     st.markdown("### Modul Anda")
+    
+    # Urutan modul default
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
@@ -299,9 +301,9 @@ if st.session_state.current_page == "home":
         ("⚙️", "Pengaturan", "Pengaturan sistem.", "pengaturan")
     ]
     
-    # KHUSUS ADMIN: TAMBAH MENU MANAJEMEN
+    # KHUSUS ADMIN: TAMBAH MENU MANAJEMEN DI URUTAN TERAKHIR
     if st.session_state.user_role == "admin":
-        mods.insert(0, ("👥", "Manajemen Pengguna", "Setujui akun & reset password.", "admin_users"))
+        mods.append(("👥", "Manajemen Pengguna", "Setujui akun, reset password, & hapus akun.", "admin_users"))
         
     cols = st.columns(3)
     for i, (icon, title, desc, page) in enumerate(mods):
@@ -315,7 +317,7 @@ if st.session_state.current_page == "home":
 # ================================================================
 elif st.session_state.current_page == "admin_users":
     st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 👥 Manajemen Pengguna (Khusus Admin)")
+    st.markdown("## 👥 Manajemen Pengguna")
     
     users = load_users()
     
@@ -341,23 +343,34 @@ elif st.session_state.current_page == "admin_users":
                     st.rerun()
             st.divider()
 
-    # 2. Daftar Semua Akun (Reset Password)
+    # 2. Daftar Semua Akun (Reset Password & Hapus)
     st.markdown("### Daftar Semua Akun")
     for u, d in users.items():
         with st.expander(f"{d['nama']} (@{u}) - Status: {d['status'].upper()}"):
-            c1, c2 = st.columns([1, 2])
+            c1, c2 = st.columns([1, 3])
             with c1:
                 st.write(f"**Role:** {d['role']}")
             with c2:
                 if u not in SUPER_ADMIN:
                     new_pw = st.text_input(f"Password Baru untuk {u}", type="password", key=f"pw_{u}")
-                    if st.button(f"Reset Password", key=f"reset_{u}"):
-                        if len(new_pw) >= 6:
-                            users[u]["password"] = hash_password(new_pw)
+                    
+                    col_reset, col_hapus = st.columns(2)
+                    with col_reset:
+                        if st.button(f"Reset Password", key=f"reset_{u}", use_container_width=True):
+                            if len(new_pw) >= 6:
+                                users[u]["password"] = hash_password(new_pw)
+                                save_users(users)
+                                st.success(f"Password {u} berhasil diubah.")
+                                st.rerun()
+                            else:
+                                st.error("Password minimal 6 karakter.")
+                    
+                    with col_hapus:
+                        if st.button(f"🗑️ Hapus Akun", key=f"del_{u}", use_container_width=True, type="primary"):
+                            del users[u]
                             save_users(users)
-                            st.success(f"Password {u} berhasil diubah menjadi '{new_pw}'.")
-                        else:
-                            st.error("Password minimal 6 karakter.")
+                            st.success(f"Akun @{u} berhasil dihapus permanen.")
+                            st.rerun()
                 else:
                     st.info("Akun Super Admin (Terkunci).")
 
