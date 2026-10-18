@@ -8,6 +8,7 @@ from datetime import datetime
 import hashlib
 import io
 import zipfile
+import base64
 from openpyxl import Workbook
 
 from db_storage import (
@@ -51,7 +52,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (SIDEBAR PERSIS GAMBAR)
+# PAGE CONFIG & CSS (DESAIN SIDEBAR PERSIS GAMBAR)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -91,10 +92,10 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
 /* NAVIGASI RADIO BUTTON (Menu Putih saat Aktif) */
-[data-testid="stSidebar"] .stRadio > div { gap: 0.3rem; padding: 0 15px;}
+[data-testid="stSidebar"] .stRadio > div { gap: 0.2rem; padding: 0 15px;}
 [data-testid="stSidebar"] .stRadio label {
-    display: flex; align-items: center; padding: 12px 15px;
-    border-radius: 10px; font-weight: 700; font-size: 0.95rem;
+    display: flex; align-items: center; padding: 10px 15px;
+    border-radius: 10px; font-weight: 700; font-size: 0.9rem;
     cursor: pointer; transition: all 0.2s; border: none;
 }
 [data-testid="stSidebar"] .stRadio label:hover { background-color: rgba(255,255,255,0.1); }
@@ -105,7 +106,7 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 }
 
 /* SIDEBAR BOTTOM (Quote & Ilustrasi) */
-.sb-bottom { position: relative; padding: 20px; margin-top: 50px; text-align: center; }
+.sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
 .sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
 .sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
 
@@ -326,13 +327,25 @@ if not st.session_state.logged_in:
     st.stop()
 
 with st.sidebar:
-    # Logo Ikon Toga Putih
-    st.markdown("""
+    # Membaca gambar logo lokal
+    def get_base64_image(image_path):
+        try:
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        except FileNotFoundError:
+            return ""
+
+    logo_b64 = get_base64_image("logo_sekolah.png")
+    
+    if logo_b64:
+        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="width: 45px; height: 45px; object-fit: contain; background-color: white; border-radius: 8px; padding: 2px;">'
+    else:
+        logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
+
+    st.markdown(f"""
     <div class="sb-logo">
         <div class="sb-logo-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px">
-                <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
-            </svg>
+            {logo_html}
         </div>
         <div class="sb-logo-text">
             <h2>SAA.Analytics</h2>
@@ -342,7 +355,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     # Navigasi Radio Button
-    menu_options = ["🏠 Beranda", "👥 Data Siswa", "🔍 Pengaruh Faktor", "📈 Prediksi", "📋 Laporan"]
+    menu_options = ["🏠 Beranda", "📝 Input & Upload", "👥 Data Siswa", "🔍 Pengaruh Faktor", "📈 Prediksi", "📋 Laporan", "ℹ️ Tentang"]
     if st.session_state.user_role == "admin":
         menu_options.append("⚙️ Pengaturan Admin")
         menu_options.append("🚪 Logout")
@@ -351,12 +364,11 @@ with st.sidebar:
         menu_options.append("🚪 Logout")
 
     mapping_menu = {
-        "🏠 Beranda": "home", "👥 Data Siswa": "monitoring", "🔍 Pengaruh Faktor": "kausal",
-        "📈 Prediksi": "prediksi", "📋 Laporan": "rekomendasi", 
-        "⚙️ Pengaturan": "pengaturan", "⚙️ Pengaturan Admin": "admin_users"
+        "🏠 Beranda": "home", "📝 Input & Upload": "analisis", "👥 Data Siswa": "monitoring", 
+        "🔍 Pengaruh Faktor": "kausal", "📈 Prediksi": "prediksi", "📋 Laporan": "rekomendasi", 
+        "ℹ️ Tentang": "tentang", "⚙️ Pengaturan": "pengaturan", "⚙️ Pengaturan Admin": "admin_users"
     }
     
-    # Dapatkan index menu yang aktif
     default_idx = 0
     for i, m in enumerate(menu_options):
         if mapping_menu.get(m) == st.session_state.current_page:
@@ -365,7 +377,6 @@ with st.sidebar:
 
     menu_choice = st.radio("Menu", menu_options, index=default_idx, label_visibility="collapsed")
 
-    # Aksi pilihan menu
     if menu_choice == "🚪 Logout":
         add_log("Logout")
         st.session_state.logged_in = False
