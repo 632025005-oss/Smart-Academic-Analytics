@@ -679,19 +679,12 @@ elif st.session_state.current_page == "rekomendasi":
                     for j, s in enumerate(tugas["siswa"], 1):
                         st.markdown(f"{j}. {s}")
 
-    # ==========================================
-    # FITUR DOWNLOAD LAPORAN WORD (RAPORT)
-    # ==========================================
-    st.markdown("---")
-    st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
-    st.write("Laporan ini sudah lengkap dengan kolom tanda tangan guru dan siap di-print.")
-
-        # ==========================================
-    # FITUR DOWNLOAD LAPORAN WORD (RAPORT)
+       # ==========================================
+    # FITUR DOWNLOAD LAPORAN WORD 
     # ==========================================
     st.markdown("---")
     st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
-    st.write("Laporan ini sudah lengkap dengan kolom tanda tangan guru dan siap di-print.")
+    st.write("Laporan ini sudah dirancang dengan bahasa yang mudah dipahami oleh guru dan orang tua.")
 
     if st.button("📥 Buat & Unduh Laporan Word", type="primary", use_container_width=True):
         try:
@@ -699,7 +692,6 @@ elif st.session_state.current_page == "rekomendasi":
             from docx.shared import Pt, Inches
             from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-            # Inisialisasi dokumen
             doc = Document()
             
             # Header
@@ -710,7 +702,7 @@ elif st.session_state.current_page == "rekomendasi":
             subheader.alignment = WD_ALIGN_PARAGRAPH.CENTER
             doc.add_paragraph()
 
-            # Info Siswa (Tabel)
+            # Info Siswa
             table = doc.add_table(rows=4, cols=2)
             table.style = 'Table Grid'
             cells = table.rows[0].cells
@@ -728,21 +720,31 @@ elif st.session_state.current_page == "rekomendasi":
 
             doc.add_paragraph()
             
-            # Hasil Analisis
-            doc.add_heading('Hasil Analisis Faktor', level=1)
-            doc.add_paragraph(f"Nilai siswa saat ini berada {abs(selisih):.2f} poin {posisi} rata-rata sekolah.")
-            
-            # Perbaikan Variabel yang tadi error
-            teks_kekuatan = fp['Aspek'] if fp is not None else "Belum ada faktor kekuatan dominan."
-            teks_kelemahan = fn['Aspek'] if fn is not None else "Tidak ada faktor yang signifikan menekan nilai."
-            
-            doc.add_paragraph(f"Kekuatan utama: {teks_kekuatan}")
-            doc.add_paragraph(f"Faktor yang perlu diperbaiki: {teks_kelemahan}")
+            # Ringkasan Kondisi
+            doc.add_heading('Ringkasan Kondisi', level=1)
+            posisi_teks = "di atas" if selisih >= 0 else "di bawah"
+            doc.add_paragraph(f"Saat ini, {nama} memiliki nilai rata-rata {nilai:.2f}, yang berada {abs(selisih):.2f} poin {posisi_teks} rata-rata sekolah. Berdasarkan analisis, {nama} masuk dalam kategori {kategori}.")
 
-            # Prioritas Tindak Lanjut
-            doc.add_heading('Prioritas Tindak Lanjut', level=1)
-            for i, (_, row) in enumerate(prioritas.iterrows(), 1):
-                doc.add_paragraph(f"{i}. {row['Aspek']} (Selisih: {row['Selisih']:+.2f})", style='List Number')
+            # Kekuatan & Area Pengembangan (Bahasa Awam)
+            doc.add_heading('Catatan untuk Orang Tua & Guru', level=1)
+            
+            if fp is not None:
+                doc.add_paragraph(f"🌟 Kekuatan Utama: {nama} menunjukkan sikap yang sangat baik pada aspek {fp['Aspek']}. Hal ini menjadi modal penting untuk terus berkembang.")
+            
+            if fn is not None:
+                doc.add_paragraph(f"🎯 Area yang Perlu Didampingi: Untuk meningkatkan hasil belajar, kita bisa fokus membantu {nama} pada aspek {fn['Aspek']}. Berikut adalah saran tindak lanjut yang bisa dilakukan:")
+                
+                # Mengambil saran dari kamus TINDAK yang sudah ada
+                saran_guru = TINDAK.get(fn['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
+                saran_siswa = TINDAK.get(fn['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
+                
+                doc.add_paragraph("Saran untuk Guru/Sekolah:", style='List Bullet')
+                for s in saran_guru[:3]: # Ambil 3 saran teratas
+                    doc.add_paragraph(s, style='List Bullet 2')
+                    
+                doc.add_paragraph("Saran untuk Siswa/Orang Tua di Rumah:", style='List Bullet')
+                for s in saran_siswa[:2]: # Ambil 2 saran teratas
+                    doc.add_paragraph(s, style='List Bullet 2')
 
             doc.add_paragraph()
 
@@ -757,16 +759,16 @@ elif st.session_state.current_page == "rekomendasi":
             ttd_cells[0].text = '\n\n\n\n(_______________________)'
             ttd_cells[1].text = f'\n\n\n\n( {st.session_state.user_nama} )'
 
-            # Simpan ke memory
+            # Simpan
             buffer = io.BytesIO()
             doc.save(buffer)
             buffer.seek(0)
 
-            st.success("Laporan berhasil dibuat! Klik tombol di bawah untuk mengunduh.")
+            st.success("Laporan berhasil dibuat! Silakan unduh di bawah.")
             st.download_button(
-                label="⬇️ Klik di Sini untuk Download Laporan (.docx)",
+                label="⬇️ Download Laporan (.docx)",
                 data=buffer,
-                file_name=f"Raport_{nama.replace(' ', '_')}.docx",
+                file_name=f"Laporan_{nama.replace(' ', '_')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
         except Exception as e:
