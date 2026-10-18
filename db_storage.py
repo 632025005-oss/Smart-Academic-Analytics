@@ -43,10 +43,20 @@ def load_database(guru_nama=None):
     return siswa
 
 def insert_siswa(data):
-    # Pastikan 'Dicatat Oleh' diisi dengan nama guru
-    if "Dicatat Oleh" not in data or not data["Dicatat Oleh"]:
-        data["Dicatat Oleh"] = "Sistem"
-    return _db().siswa.insert_one(dict(data)).inserted_id
+    # Cek apakah siswa ini sudah ada di database (Kelas, Absen, dan Guru yang sama)
+    existing = _db().siswa.find_one({
+        "Kelas": data.get("Kelas"),
+        "Absen": int(data.get("Absen", 0)),
+        "Dicatat Oleh": data.get("Dicatat Oleh")
+    })
+    
+    if existing:
+        # Jika sudah ada, perbarui datanya (jangan insert baru agar tidak error)
+        _db().siswa.update_one({"_id": existing["_id"]}, {"$set": dict(data)})
+        return existing["_id"]
+    else:
+        # Jika belum ada, buat baru
+        return _db().siswa.insert_one(dict(data)).inserted_id
 
 def hapus_siswa(kelas, absen, guru_nama):
     """Hapus hanya jika milik guru tersebut."""
