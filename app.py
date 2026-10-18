@@ -14,7 +14,7 @@ from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
     load_database, insert_siswa, hapus_semua_siswa,
     load_config, save_config, load_log, save_log, tambah_log,
-    update_kuesioner_siswa
+    update_kuesioner_siswa, load_all_siswa, hapus_siswa_by_id  # <-- Tambahan baru
 )
 
 SUPER_ADMIN = {"admin", "regina"}
@@ -403,6 +403,27 @@ elif st.session_state.current_page == "admin_users":
             st.dataframe(df_log, use_container_width=True, hide_index=True)
         else:
             st.info("Belum ada log sama sekali.")
+
+        # 4. Hapus Data Siswa (Kuesioner Salah)
+    st.markdown("---")
+    st.markdown("### 🗑️ Hapus Data Siswa (Kuesioner Salah)")
+    st.write("Gunakan fitur ini jika ada siswa yang salah mengisi kuesioner.")
+    
+    all_siswa = load_all_siswa()
+    if not all_siswa:
+        st.info("Belum ada data siswa di sistem.")
+    else:
+        df_all = pd.DataFrame(all_siswa)
+        st.dataframe(df_all[["Nama", "Kelas", "Absen", "Nilai Akademik", "Dicatat Oleh"]], use_container_width=True, hide_index=True)
+        
+        opsi_hapus = {s["_id"]: f"{s['Nama']} - {s['Kelas']} (Absen {s['Absen']}) - Input oleh: {s.get('Dicatat Oleh', 'Sistem')}" for s in all_siswa}
+        
+        siswa_id_terpilih = st.selectbox("Pilih siswa yang akan dihapus:", options=list(opsi_hapus.keys()), format_func=lambda x: opsi_hapus[x])
+        
+        if st.button("Hapus Data Siswa Ini", type="primary"):
+            hapus_siswa_by_id(siswa_id_terpilih)
+            st.success("Data siswa berhasil dihapus permanen dari database.")
+            st.rerun()
 
 # ================================================================
 # MODUL 01: INPUT & UPLOAD (DIGABUNG)
