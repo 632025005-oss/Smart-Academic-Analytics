@@ -51,7 +51,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (SIDEBAR SELALU TERBUKA)
+# PAGE CONFIG & CSS (DESAIN ESTETIK SEMI-REALISTIS)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -69,31 +69,41 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
 #MainMenu, footer, header { visibility: hidden; }
 
-/* KUNCI SIDEBAR AGAR SELALU TERBUKA */
-[data-testid="collapsedControl"] { display: none; } /* Hilangkan tombol sembunyikan */
+/* KUNCI SIDEBAR AGAR SELALU TERBUKA & ESTETIK */
+[data-testid="collapsedControl"] { display: none; } 
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0D9488 0%, #0F766E 100%);
+    /* Background foto perpustakaan/buku dengan overlay warna Teal gelap */
+    background: linear-gradient(180deg, rgba(13, 148, 136, 0.92) 0%, rgba(15, 118, 110, 0.96) 100%), 
+                url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1000&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
     border-right: none;
-    min-width: 250px !important;
-    max-width: 250px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
     transform: translateX(0) !important;
     visibility: visible !important;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
 }
 [data-testid="stSidebar"] * { color: white !important; }
+
+/* Tombol Sidebar */
 [data-testid="stSidebar"] .stButton > button {
     background: transparent;
     color: white;
     border: none;
     text-align: left;
-    padding: 10px 15px;
+    padding: 12px 15px;
     font-weight: 700;
-    border-radius: 8px;
-    transition: all 0.3s;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
 }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.2); }
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.2); margin: 15px 0; }
 
 /* HEADER ATAS */
 .top-header {
@@ -336,13 +346,15 @@ with st.sidebar:
     if st.session_state.user_role == "admin":
         if st.button("👥 Manajemen Pengguna", use_container_width=True): goto_page("admin_users")
         
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # Ilustrasi Buku
+    # FOTO SEMI-REALISTIS BUKU DAN TANAMAN
     st.markdown("""
-    <div style='text-align: center;'>
-        <div style='font-size: 4rem; line-height: 1;'>📚🪴</div>
-        <p style='font-size: 0.8rem; font-style: italic; margin-top: 10px; color: #E2E8F0;'>
+    <div style='text-align: center; padding: 0 10px;'>
+        <img src='https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400&auto=format&fit=crop' 
+             style='width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 15px;' 
+             alt='Books'>
+        <p style='font-size: 0.8rem; font-style: italic; color: #E2E8F0; line-height: 1.5;'>
             "Belajar Hari Ini<br>Untuk Dirimu Yang Lebih Baik ❤️"
         </p>
     </div>
@@ -356,7 +368,7 @@ with st.sidebar:
         st.rerun()
 
 # ================================================================
-# HALAMAN BERANDA (BERSIH TANPA TAB GRAFIK)
+# HALAMAN BERANDA (BERSIH)
 # ================================================================
 if st.session_state.current_page == "home":
     st.markdown(f"""
@@ -371,7 +383,7 @@ if st.session_state.current_page == "home":
     
     df = pd.DataFrame(st.session_state.database_siswa)
     
-    # KPI Cards (Hanya 4 Kartu Statistik Siswa, Tanpa Aktivitas)
+    # KPI Cards
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon green">👥</div><div class="kpi-info"><h4>Jumlah Siswa</h4><h2>{len(df)}</h2><p>Siswa yang sudah didata</p></div></div>', unsafe_allow_html=True)
