@@ -3,6 +3,9 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 
+# ================================================================
+# KONEKSI (cached, aman untuk Streamlit)
+# ================================================================
 @st.cache_resource
 def _get_client():
     return MongoClient(st.secrets["MONGODB_URI"])
@@ -28,10 +31,9 @@ def save_users(users_dict):
         col.insert_many(docs)
 
 # ================================================================
-# SISWA (DENGAN FILTER PRIVASI GURU)
+# SISWA
 # ================================================================
 def load_database(guru_nama=None):
-    """Hanya memuat data milik guru yang sedang login."""
     query = {}
     if guru_nama:
         query["Dicatat Oleh"] = guru_nama
@@ -43,7 +45,6 @@ def load_database(guru_nama=None):
     return siswa
 
 def insert_siswa(data):
-    # Cek apakah siswa ini sudah ada di database (Kelas, Absen, dan Guru yang sama)
     existing = _db().siswa.find_one({
         "Kelas": data.get("Kelas"),
         "Absen": int(data.get("Absen", 0)),
@@ -51,42 +52,39 @@ def insert_siswa(data):
     })
     
     if existing:
-        # Jika sudah ada, perbarui datanya (jangan insert baru agar tidak error)
         _db().siswa.update_one({"_id": existing["_id"]}, {"$set": dict(data)})
         return existing["_id"]
     else:
-        # Jika belum ada, buat baru
         return _db().siswa.insert_one(dict(data)).inserted_id
 
-def hapus_siswa(kelas, absen, guru_nama):
-    """Hapus hanya jika milik guru tersebut."""
-    return _db().siswa.delete_one({
-        "Kelas": kelas, 
-        "Absen": int(absen),
-        "Dicatat Oleh": guru_nama
-    })
-
 def hapus_semua_siswa(guru_nama):
-    """Hapus semua data milik guru tertentu saja."""
     return _db().siswa.delete_many({"Dicatat Oleh": guru_nama}).deleted_count
+
+# FUNGSI BARU UNTUK ADMIN
+def load_all_siswa():
+    """Memuat SEMUA data siswa dari semua guru (Khusus Admin)."""
+    siswa = []
+    for doc in _db().siswa.find().sort("Kelas", 1):
+        doc["_id"] = str(doc["_id"])
+        siswa.append(doc)
+    return siswa
+
+def hapus_siswa_by_id(siswa_id):
+    """Menghapus data siswa berdasarkan ID (Khusus Admin)."""
+    _db().siswa.delete_one({"_id": ObjectId(siswa_id)})
 
 def update_kuesioner_siswa(nama, kelas, absen, profil_faktor):
     db = _db().siswa
     try:
-        # Cek apakah Kelas + Absen sudah ada yang punya
         siswa_absen = db.find_one({"Kelas": kelas, "Absen": int(absen)})
         
         if siswa_absen:
-            # Jika sudah ada, cek apakah namanya sama (case-insensitive)
             if siswa_absen["Nama"].strip().lower() == nama.strip().lower():
-                # Nama sama, update kuesionernya
                 db.update_one({"_id": siswa_absen["_id"]}, {"$set": profil_faktor})
                 return True, "Data kuesioner berhasil diperbarui."
             else:
-                # Nama beda, TOLAK!
                 return False, f"❌ Gagal: Kelas {kelas} Absen {absen} sudah diisi oleh {siswa_absen['Nama']}. Silakan periksa kembali nomor absenmu."
         
-        # Jika belum ada, buat baru
         data_baru = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "Nama": nama.strip(),
@@ -101,6 +99,7 @@ def update_kuesioner_siswa(nama, kelas, absen, profil_faktor):
         return True, "Data kuesioner berhasil disimpan. (Menunggu guru menginput nilai)."
     except Exception as e:
         return False, f"Gagal menyimpan: Terjadi kesalahan sistem. ({str(e)})"
+
 # ================================================================
 # CONFIG & LOG
 # ================================================================
@@ -115,11 +114,9 @@ def save_config(cfg):
     _db().config.replace_one({"_id": "main"}, {**cfg, "_id": "main"}, upsert=True)
 
 def load_log(user=None, limit=200):
-    """Memuat log. Jika 'user' diisi, hanya memuat log milik user tersebut."""
     query = {}
     if user:
         query["user"] = user
-        
     return list(_db().log.find(query, {"_id": 0}).sort("waktu", -1).limit(limit))
 
 def save_log(log_list):
