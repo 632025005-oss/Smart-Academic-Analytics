@@ -86,14 +86,25 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 }
 .kpi-icon {
     width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7;
-    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
 }
 .kpi-icon.green { background: #DCFCE7; color: #16A34A; }
 .kpi-icon.orange { background: #FEF3C7; color: #D97706; }
 .kpi-icon.purple { background: #F3E8FF; color: #9333EA; }
 .kpi-info h4 { margin: 0; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;}
-.kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 800;}
+.kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 800; line-height: 1.2;}
 .kpi-info p { margin: 0; font-size: 0.7rem; color: var(--text-muted); }
+
+/* KARTU MODUL */
+.module-card {
+    background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid #E2E8F0;
+    transition: all 0.3s ease; min-height: 130px; margin-bottom: 0.5rem;
+    display: flex; flex-direction: column; justify-content: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+.module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.1); border-color: #0D9488; }
+.module-icon { font-size: 1.8rem; margin-bottom: 0.5rem;}
+.module-title { font-weight: 800; font-size: 1rem; color: #1E293B; margin-bottom: 0.2rem;}
+.module-desc { font-size: 0.75rem; color: #64748B; line-height: 1.4;}
 
 /* HEADER */
 .top-header {
@@ -105,8 +116,8 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
 
 /* TOMBOL */
-.stButton > button { background: var(--primary); color: white; border-radius: 8px; font-weight: 700; width: 100%;}
-.stButton > button:hover { background: var(--primary-dark); color: white; }
+.stButton > button { background: var(--primary); color: white; border-radius: 8px; font-weight: 700; width: 100%; border: none;}
+.stButton > button:hover { background: var(--primary-dark); color: white; border: none;}
 
 /* TABS */
 .stTabs [data-baseweb="tab-list"] { gap: 1rem; border-bottom: 2px solid #E2E8F0; }
@@ -199,7 +210,7 @@ def input_kategori(key, fname, is_student=False):
     return vals[labels.index(p)]
 
 # ================================================================
-# HALAMAN LOGIN & KUESIONER SISWA
+# HALAMAN LOGIN
 # ================================================================
 def halaman_login():
     col1, col2, col3 = st.columns([1, 1.2, 1])
@@ -296,6 +307,7 @@ with st.sidebar:
     if st.button("🔬 Analisis Faktor", use_container_width=True): goto_page("kausal")
     if st.button("💡 Rekomendasi & Laporan", use_container_width=True): goto_page("rekomendasi")
     if st.button("⚙️ Pengaturan", use_container_width=True): goto_page("pengaturan")
+    if st.button("ℹ️ Tentang Sistem", use_container_width=True): goto_page("tentang")
     
     if st.session_state.user_role == "admin":
         if st.button("👥 Manajemen Pengguna", use_container_width=True): goto_page("admin_users")
@@ -338,8 +350,8 @@ if st.session_state.current_page == "home":
         min_val = df['Nilai Akademik'].min() if not df.empty else 0
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon">📉</div><div class="kpi-info"><h4>Nilai Terendah</h4><h2>{min_val:.2f}</h2><p>Skor minimal</p></div></div>', unsafe_allow_html=True)
 
-    # Progress Bar Kuesioner
-    if not df.empty:
+    # Progress Bar Kuesioner (Hanya untuk Guru)
+    if st.session_state.user_role != "admin" and not df.empty:
         total_siswa = len(df)
         sudah_isi = len(df[df["Self-Efficacy"] > 0])
         persentase = sudah_isi / total_siswa if total_siswa > 0 else 0
@@ -348,8 +360,6 @@ if st.session_state.current_page == "home":
         st.write(f"**{sudah_isi}** dari **{total_siswa}** siswa telah mengisi kuesioner.")
 
     st.markdown("<br>", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
     
     # --- MENU MODUL DI HALAMAN UTAMA ---
     st.markdown("### Modul Anda")
@@ -369,10 +379,10 @@ if st.session_state.current_page == "home":
     for i, (icon, title, desc, page) in enumerate(mods):
         with cols[i % 3]:
             st.markdown(f'''
-            <div class="kpi-card" style="align-items: flex-start; flex-direction: column; min-height: 120px; margin-bottom: 0.5rem;">
-                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">{icon}</div>
-                <h4 style="margin: 0; font-size: 1rem; color: #1E293B;">{title}</h4>
-                <p style="margin: 0; font-size: 0.75rem; color: #64748B;">{desc}</p>
+            <div class="module-card">
+                <div class="module-icon">{icon}</div>
+                <div class="module-title">{title}</div>
+                <div class="module-desc">{desc}</div>
             </div>
             ''', unsafe_allow_html=True)
             if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
@@ -380,6 +390,7 @@ if st.session_state.current_page == "home":
                 
     st.markdown("<br><hr>", unsafe_allow_html=True)
 
+    # TABS GRAFIK
     tab1, tab2, tab3 = st.tabs(["Overview", "Distribusi Nilai", "Faktor Penyebab"])
     
     with tab1:
@@ -921,3 +932,7 @@ elif st.session_state.current_page == "tentang":
     5. **Composite Effect Index (CEI)**: Menggabungkan hasil analisis kausal (ATE) dan prediktif (SHAP) untuk menghasilkan rekomendasi prioritas intervensi yang komprehensif bagi guru dan sekolah.
     *Sistem ini dikembangkan sebagai luaran terapan dari Tesis Program Studi Magister Sains Data, Universitas Kristen Satya Wacana.*
     """)
+
+# ================================================================
+# END OF FILE
+# ================================================================
