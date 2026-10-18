@@ -50,7 +50,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN BARU EYECATCHING)
+# PAGE CONFIG & CSS (DESAIN KACA)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
 
@@ -92,15 +92,6 @@ html, body, [class*="css"] { font-family: 'Outfit', sans-serif; color: var(--tex
 .stTabs [data-baseweb="tab-list"] { gap: 1rem; }
 .stTabs [data-baseweb="tab"] { border-radius: 10px; padding: 0.5rem 1rem; font-weight: 600; }
 
-/* Hero */
-.hero {
-    background: linear-gradient(135deg, #1e1b4b, #312e81); color: white;
-    padding: 3rem; border-radius: 24px; margin-bottom: 2rem;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-}
-.hero h1 { font-weight: 800; font-size: 3rem; margin-bottom: 0.5rem; color: white;}
-.hero p { color: #c7d2fe; font-size: 1.1rem; }
-
 /* Metric */
 .metric-box { text-align: center; }
 .metric-val { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
@@ -119,7 +110,6 @@ for key, val in {
     if key not in st.session_state: st.session_state[key] = val
 
 def reload_data():
-    """Memuat ulang data HANYA untuk guru yang sedang login."""
     if st.session_state.user_nama:
         st.session_state.database_siswa = load_database(st.session_state.user_nama)
     st.session_state.config = load_config()
@@ -143,8 +133,6 @@ def goto_page(page):
 BASELINE_ASPEK = {"Self-Efficacy Akademik": 4.634, "Keterlibatan Orang Tua": 4.348, "Harapan Orang Tua": 3.450, "Dukungan Sekolah": 4.600, "Motivasi Belajar": 2.517, "Kecemasan Akademik": 2.893, "Kemalasan Belajar": 1.487, "Fasilitas Sekolah": 4.880}
 PENGARUH_DATA = {"Self-Efficacy Akademik": 2.1995, "Keterlibatan Orang Tua": 1.7559, "Harapan Orang Tua": -0.6987, "Dukungan Sekolah": -1.0351, "Motivasi Belajar": -1.9093, "Kecemasan Akademik": 0.7197, "Kemalasan Belajar": 0.7320, "Fasilitas Sekolah": 0.6182}
 KEPENTINGAN_DATA = {"Self-Efficacy Akademik": 0.8197, "Keterlibatan Orang Tua": 0.6717, "Harapan Orang Tua": 0.5766, "Dukungan Sekolah": 0.4325, "Motivasi Belajar": 0.3601, "Kecemasan Akademik": 0.1553, "Fasilitas Sekolah": 0.0654, "Kemalasan Belajar": 0.0846}
-BOBOT_PENGARUH = {k: PENGARUH_DATA[k] * KEPENTINGAN_DATA[k] for k in PENGARUH_DATA}
-RATA_RATA_NILAI = 83.78
 
 KELAS_LIST = [f"IX-{x}" for x in "ABCDEFGH"]
 SKALA_PILIHAN = {
@@ -200,12 +188,14 @@ def halaman_login():
                     users = load_users()
                     if username in users and verify_password(password, users[username]["password"]):
                         if users[username].get("status") == "pending":
-                            st.warning("Akun belum disetujui Admin.")
+                            st.warning("⏳ Akun Anda belum disetujui. Silakan hubungi Admin/Regina.")
+                        elif users[username].get("status") == "rejected":
+                            st.error("❌ Akun Anda ditolak oleh Admin.")
                         else:
                             st.session_state.logged_in = True
                             st.session_state.user_nama = users[username]["nama"]
                             st.session_state.user_role = users[username]["role"]
-                            reload_data() # Memuat data privat guru ini
+                            reload_data()
                             add_log("Login", username)
                             st.rerun()
                     else:
@@ -228,10 +218,11 @@ def halaman_login():
                     else:
                         users[reg_user] = {
                             "password": hash_password(reg_pw), "nama": reg_nama, "role": reg_role,
-                            "status": "approved", "created": datetime.now().strftime("%Y-%m-%d %H:%M")
+                            "status": "pending",  # <--- STATUS PENDING
+                            "created": datetime.now().strftime("%Y-%m-%d %H:%M")
                         }
                         save_users(users)
-                        st.success("Pendaftaran berhasil! Silakan login.")
+                        st.success("Pendaftaran berhasil! Akun Anda menunggu persetujuan Admin/Regina.")
 
         with tab_siswa:
             st.info("Isi kuesioner ini dengan jujur. Data akan masuk ke sistem guru Anda.")
@@ -279,7 +270,7 @@ if st.session_state.current_page == "home":
     c1, c2 = st.columns([4, 1])
     with c1:
         st.markdown(f"<h2>Halo, <b>{st.session_state.user_nama}</b>! 👋</h2>", unsafe_allow_html=True)
-        st.write("Selamat datang di ruang kerja privat Anda. Data di sini hanya milik Anda.")
+        st.write(f"Selamat datang. Anda login sebagai **{st.session_state.user_role.capitalize()}**.")
     with c2:
         if st.button("Logout", type="primary"):
             add_log("Logout")
@@ -289,7 +280,6 @@ if st.session_state.current_page == "home":
 
     st.markdown("---")
     
-    # Statistik Privat Guru
     df = pd.DataFrame(st.session_state.database_siswa)
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -308,12 +298,68 @@ if st.session_state.current_page == "home":
         ("💡", "Rekomendasi", "Saran tindak lanjut.", "rekomendasi"),
         ("⚙️", "Pengaturan", "Pengaturan sistem.", "pengaturan")
     ]
+    
+    # KHUSUS ADMIN: TAMBAH MENU MANAJEMEN
+    if st.session_state.user_role == "admin":
+        mods.insert(0, ("👥", "Manajemen Pengguna", "Setujui akun & reset password.", "admin_users"))
+        
     cols = st.columns(3)
     for i, (icon, title, desc, page) in enumerate(mods):
         with cols[i % 3]:
             st.markdown(f'<div class="glass-card" style="min-height:150px;"><h3>{icon} {title}</h3><p style="color:grey;font-size:0.9rem;">{desc}</p></div>', unsafe_allow_html=True)
             if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
                 goto_page(page)
+
+# ================================================================
+# MODUL ADMIN: MANAJEMEN PENGGUNA
+# ================================================================
+elif st.session_state.current_page == "admin_users":
+    st.button("← Kembali", on_click=goto_page, args=("home",))
+    st.markdown("## 👥 Manajemen Pengguna (Khusus Admin)")
+    
+    users = load_users()
+    
+    # 1. Antrean Persetujuan
+    pending_users = {u: d for u, d in users.items() if d.get("status") == "pending"}
+    st.markdown(f"### Antrean Persetujuan ({len(pending_users)})")
+    if not pending_users:
+        st.success("Tidak ada akun yang menunggu persetujuan.")
+    else:
+        for u, d in pending_users.items():
+            with st.container():
+                col1, col2, col3 = st.columns([3, 1, 1])
+                col1.write(f"**{d['nama']}** (@{u}) - Mendaftar: {d['created']}")
+                if col2.button("✅ Setujui", key=f"app_{u}", use_container_width=True):
+                    users[u]["status"] = "approved"
+                    save_users(users)
+                    st.success(f"Akun {u} disetujui.")
+                    st.rerun()
+                if col3.button("❌ Tolak", key=f"rej_{u}", use_container_width=True):
+                    users[u]["status"] = "rejected"
+                    save_users(users)
+                    st.error(f"Akun {u} ditolak.")
+                    st.rerun()
+            st.divider()
+
+    # 2. Daftar Semua Akun (Reset Password)
+    st.markdown("### Daftar Semua Akun")
+    for u, d in users.items():
+        with st.expander(f"{d['nama']} (@{u}) - Status: {d['status'].upper()}"):
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                st.write(f"**Role:** {d['role']}")
+            with c2:
+                if u not in SUPER_ADMIN:
+                    new_pw = st.text_input(f"Password Baru untuk {u}", type="password", key=f"pw_{u}")
+                    if st.button(f"Reset Password", key=f"reset_{u}"):
+                        if len(new_pw) >= 6:
+                            users[u]["password"] = hash_password(new_pw)
+                            save_users(users)
+                            st.success(f"Password {u} berhasil diubah menjadi '{new_pw}'.")
+                        else:
+                            st.error("Password minimal 6 karakter.")
+                else:
+                    st.info("Akun Super Admin (Terkunci).")
 
 # ================================================================
 # MODUL 01: INPUT & UPLOAD (DIGABUNG)
@@ -324,10 +370,8 @@ elif st.session_state.current_page == "analisis":
     
     tab_manual, tab_excel = st.tabs(["✍️ Input Manual (Satu Siswa)", "📤 Upload Excel (Banyak Siswa)"])
     
-    # TAB EXCEL UPLOAD
     with tab_excel:
         st.write("Upload data nilai siswa sekaligus. (Kuesioner diisi mandiri oleh siswa).")
-        
         wb = Workbook(); ws = wb.active; ws.title = "Nilai"
         ws.append(["Nama Siswa", "Kelas", "Absen", "Nilai Rapor"])
         ws.append(["Contoh 1", "IX-A", 1, 85.5])
@@ -358,7 +402,6 @@ elif st.session_state.current_page == "analisis":
                 st.success("Data nilai berhasil disimpan! Kuesioner akan menyusul jika siswa mengisi.")
                 st.rerun()
                 
-    # TAB MANUAL
     with tab_manual:
         st.write("Input satu siswa beserta kuesionernya sekaligus.")
         with st.form("manual_form"):
@@ -420,24 +463,19 @@ elif st.session_state.current_page == "monitoring":
 elif st.session_state.current_page == "kausal":
     st.button("← Kembali", on_click=goto_page, args=("home",))
     st.markdown("## 🔬 Modul 03: Faktor Pengaruh")
-    st.write("Grafik di bawah ini adalah hasil analisis populasi secara umum (berlaku untuk semua).")
+    st.write("Grafik di bawah ini adalah hasil analisis populasi secara umum.")
     
     c1, c2 = st.columns(2)
-    
     with c1:
         st.markdown("**Dampak Sebab-Akibat (Poin)**")
         df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh")
-        
-        # Menggunakan bar chart streamlit agar rapi
         st.bar_chart(df_ate.set_index("Faktor"), color="#6366f1")
-        st.caption("Faktor dengan batang ke kanan (positif) menaikkan nilai. Ke kiri (negatif) menurunkan nilai.")
-        
+        st.caption("Faktor dengan batang ke kanan (positif) menaikkan nilai.")
     with c2:
         st.markdown("**Tingkat Kepentingan Prediksi**")
         df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Kepentingan")
-        
         st.bar_chart(df_shap.set_index("Faktor"), color="#10B981")
-        st.caption("Semakin panjang batang, semakin sering sistem menggunakan faktor ini untuk memprediksi nilai.")
+        st.caption("Semakin panjang batang, semakin sering sistem menggunakan faktor ini.")
 
 # ================================================================
 # MODUL 04: REKOMENDASI
@@ -445,18 +483,12 @@ elif st.session_state.current_page == "kausal":
 elif st.session_state.current_page == "rekomendasi":
     st.button("← Kembali", on_click=goto_page, args=("home",))
     st.markdown("## 💡 Modul 04: Rekomendasi Tindak Lanjut")
-    st.write("Berdasarkan analisis, berikut adalah saran intervensi untuk sekolah:")
-    
     st.markdown("### Prioritas Utama (Faktor Pendorong)")
     st.success("**Self-Efficacy Akademik**: Dorong kepercayaan diri akademik melalui mentoring dan apresiasi proses.")
     st.success("**Keterlibatan Orang Tua**: Perkuat komunikasi dan pendampingan belajar antara sekolah dan keluarga.")
-    
     st.markdown("### Perlu Dievaluasi (Faktor Penghambat)")
     st.warning("**Motivasi Belajar**: Identifikasi hambatan belajar dan kaitkan materi dengan kehidupan nyata.")
     st.warning("**Dukungan Sekolah**: Evaluasi bentuk pendampingan agar tidak mengurangi kemandirian siswa.")
-    
-    st.markdown("### Kesimpulan")
-    st.info("Fokuslah pada peningkatan Efikasi Diri dan Libatkan Orang Tua. Jika kedua hal ini diperbaiki, nilai siswa diprediksi akan meningkat secara signifikan.")
 
 # ================================================================
 # MODUL 05: PENGATURAN
@@ -469,7 +501,6 @@ elif st.session_state.current_page == "pengaturan":
     with c1:
         st.markdown("### Profil Anda")
         st.info(f"**Nama:** {st.session_state.user_nama}\n\n**Role:** {st.session_state.user_role.capitalize()}")
-        
         if st.button("Logout dari Perangkat Ini"):
             add_log("Logout")
             st.session_state.logged_in = False
@@ -479,7 +510,6 @@ elif st.session_state.current_page == "pengaturan":
     with c2:
         st.markdown("### Log Aktivitas Terakhir")
         if st.session_state.log:
-            # Tampilkan 5 log terakhir
             df_log = pd.DataFrame(st.session_state.log[:5])[["waktu", "aksi"]]
             st.dataframe(df_log, use_container_width=True, hide_index=True)
         else:
