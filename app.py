@@ -556,12 +556,12 @@ elif st.session_state.current_page == "kausal":
     st.dataframe(df_k, use_container_width=True, hide_index=True)
 
 # ================================================================
-# MODUL 04: REKOMENDASI (CATATAN GURU)
+# MODUL 04: REKOMENDASI (CATATAN GURU & DOWNLOAD WORD)
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
     st.button("← Kembali", on_click=goto_page, args=("home",))
     st.markdown("## 💡 Modul 04: Rekomendasi & Catatan Guru")
-    st.write("Saran tindak lanjut personal berdasarkan profil siswa.")
+    st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word.")
 
     df_siswa = pd.DataFrame(st.session_state.database_siswa)
     if df_siswa.empty:
@@ -679,32 +679,87 @@ elif st.session_state.current_page == "rekomendasi":
                     for j, s in enumerate(tugas["siswa"], 1):
                         st.markdown(f"{j}. {s}")
 
-    st.markdown("### Download Catatan")
-    faktor_utama = prioritas.iloc[0]["Aspek"] if len(prioritas) > 0 else "-"
-    faktor_kekuatan = pos.iloc[0]["Aspek"] if len(pos) > 0 else "-"
-    txt = (
-        "CATATAN KONSULTASI GURU - SAA\n"
-        "=================================\n"
-        f"Nama Siswa  : {nama}\nKelas       : {kelas}\nAbsen       : {absen}\n"
-        f"Nilai       : {nilai:.2f}\nKategori    : {kategori}\n\n"
-        "KESIMPULAN\n----------\n"
-        f"Nilai siswa {abs(selisih):.2f} poin {'di atas' if selisih >= 0 else 'di bawah'} rata-rata sekolah.\n\n"
-        f"Faktor paling menekan : {faktor_utama}\n"
-        f"Faktor kekuatan       : {faktor_kekuatan}\n\n"
-        "PRIORITAS PERBAIKAN\n-------------------\n"
-    )
-    for i, (_, row) in enumerate(prioritas.iterrows(), 1):
-        txt += f"{i}. {row['Aspek']} (selisih {row['Selisih']:+.2f})\n"
-    txt += f"\nDibuat oleh : {st.session_state.user_nama}\n"
-    txt += f"Tanggal     : {datetime.now().strftime('%d %B %Y, %H:%M')}\n"
-    st.download_button(
-        "📥 Download Catatan (.txt)",
-        data=txt.encode("utf-8"),
-        file_name=f"catatan_{nama.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.txt",
-        mime="text/plain",
-        use_container_width=True,
-    )
+    # ==========================================
+    # FITUR DOWNLOAD LAPORAN WORD (RAPORT)
+    # ==========================================
+    st.markdown("---")
+    st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
+    st.write("Laporan ini sudah lengkap dengan kolom tanda tangan guru dan siap di-print.")
 
+    if st.button("📥 Buat & Unduh Laporan Word", type="primary", use_container_width=True):
+        try:
+            from docx import Document
+            from docx.shared import Pt, Inches
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+            # Inisialisasi dokumen
+            doc = Document()
+            
+            # Header
+            header = doc.add_heading('LAPORAN PERKEMBANGAN SISWA', 0)
+            header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            subheader = doc.add_paragraph('Smart Academic Analytics (SAA) - SMPN 6 Salatiga')
+            subheader.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            doc.add_paragraph()
+
+            # Info Siswa (Tabel)
+            table = doc.add_table(rows=4, cols=2)
+            table.style = 'Table Grid'
+            cells = table.rows[0].cells
+            cells[0].text = 'Nama Siswa'
+            cells[1].text = nama
+            cells = table.rows[1].cells
+            cells[0].text = 'Kelas / Absen'
+            cells[1].text = f"{kelas} / {absen}"
+            cells = table.rows[2].cells
+            cells[0].text = 'Nilai Rata-rata'
+            cells[1].text = f"{nilai:.2f}"
+            cells = table.rows[3].cells
+            cells[0].text = 'Kategori'
+            cells[1].text = kategori
+
+            doc.add_paragraph()
+            
+            # Hasil Analisis
+            doc.add_heading('Hasil Analisis Faktor', level=1)
+            doc.add_paragraph(f"Nilai siswa saat ini berada {abs(selisih):.2f} poin {posisi} rata-rata sekolah.")
+            doc.add_paragraph(f"Kekuatan utama: {faktor_kekuatan}")
+            doc.add_paragraph(f"Faktor yang perlu diperbaiki: {faktor_utama}")
+
+            # Prioritas Tindak Lanjut
+            doc.add_heading('Prioritas Tindak Lanjut', level=1)
+            for i, (_, row) in enumerate(prioritas.iterrows(), 1):
+                doc.add_paragraph(f"{i}. {row['Aspek']} (Selisih: {row['Selisih']:+.2f})", style='List Number')
+
+            doc.add_paragraph()
+
+            # Tanda Tangan
+            ttd_table = doc.add_table(rows=2, cols=2)
+            ttd_table.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            ttd_cells = ttd_table.rows[0].cells
+            ttd_cells[0].text = 'Guru / Konselor,'
+            ttd_cells[1].text = f"Salatiga, {datetime.now().strftime('%d %B %Y')}"
+            
+            ttd_cells = ttd_table.rows[1].cells
+            ttd_cells[0].text = '\n\n\n\n(_______________________)'
+            ttd_cells[1].text = f'\n\n\n\n( {st.session_state.user_nama} )'
+
+            # Simpan ke memory
+            buffer = io.BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+
+            st.success("Laporan berhasil dibuat! Klik tombol di bawah untuk mengunduh.")
+            st.download_button(
+                label="⬇️ Klik di Sini untuk Download Laporan (.docx)",
+                data=buffer,
+                file_name=f"Raport_{nama.replace(' ', '_')}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        except Exception as e:
+            st.error(f"Gagal membuat dokumen Word. Pastikan library 'python-docx' sudah terinstall. Error: {e}")
+            
 # ================================================================
 # MODUL 05: PENGATURAN
 # ================================================================
