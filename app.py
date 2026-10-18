@@ -14,7 +14,8 @@ from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
     load_database, insert_siswa, hapus_semua_siswa,
     load_config, save_config, load_log, save_log, tambah_log,
-    update_kuesioner_siswa, load_all_siswa, hapus_siswa_by_id  # <-- Tambahan baru
+    update_kuesioner_siswa, load_all_siswa, hapus_siswa_by_id,
+    hapus_semua_siswa_admin  # <-- TAMBAHKAN INI
 )
 
 SUPER_ADMIN = {"admin", "regina"}
@@ -424,6 +425,17 @@ elif st.session_state.current_page == "admin_users":
             hapus_siswa_by_id(siswa_id_terpilih)
             st.success("Data siswa berhasil dihapus permanen dari database.")
             st.rerun()
+
+                    # ZONA BERBAHAYA (HAPUS SEMUA)
+        st.markdown("---")
+        with st.expander("🚨 ZONA BERBAHAYA: Hapus SEMUA Data Siswa"):
+            st.warning("Tindakan ini akan menghapus seluruh data siswa dari SEMUA guru secara permanen. Pastikan Anda sudah melakukan backup!")
+            konfirmasi = st.checkbox("Saya mengerti dan ingin menghapus SEMUA data siswa.")
+            
+            if st.button("Hapus SEMUA Data Siswa", type="primary", disabled=not konfirmasi):
+                jumlah = hapus_semua_siswa_admin()
+                st.success(f"Berhasil menghapus {jumlah} data siswa dari database.")
+                st.rerun()
 
 # ================================================================
 # MODUL 01: INPUT & UPLOAD (DIGABUNG)

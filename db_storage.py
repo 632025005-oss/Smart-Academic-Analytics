@@ -132,3 +132,7 @@ def tambah_log(entry):
         oldest = list(_db().log.find().sort("waktu", 1).limit(total - 200))
         ids = [d["_id"] for d in oldest]
         _db().log.delete_many({"_id": {"$in": ids}})
+
+        def hapus_semua_siswa_admin():
+    """Menghapus SELURUH data siswa dari semua guru (Khusus Admin)."""
+    return _db().siswa.delete_many({}).deleted_count
