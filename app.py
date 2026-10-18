@@ -51,13 +51,13 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN ESTETIK SEMI-REALISTIS)
+# PAGE CONFIG & CSS (DESAIN SIDEBAR PERSIS GAMBAR)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@600;700&display=swap');
 
 :root {
     --teal: #0D9488; --teal-dark: #0F766E; --gold: #F59E0B;
@@ -72,52 +72,53 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 /* KUNCI SIDEBAR AGAR SELALU TERBUKA & ESTETIK */
 [data-testid="collapsedControl"] { display: none; } 
 [data-testid="stSidebar"] {
-    /* Background foto perpustakaan/buku dengan overlay warna Teal gelap */
-    background: linear-gradient(180deg, rgba(13, 148, 136, 0.92) 0%, rgba(15, 118, 110, 0.96) 100%), 
-                url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1000&auto=format&fit=crop');
-    background-size: cover;
-    background-position: center;
+    /* Warna background hijau gelap dengan efek gelombang di bawah */
+    background-color: #006B62 !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,60 Q30,90 60,60 T100,60 L100,100 L0,100 Z" fill="%23004d45"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: bottom !important;
+    background-size: 100% 300px !important;
     border-right: none;
-    min-width: 260px !important;
-    max-width: 260px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
     transform: translateX(0) !important;
     visibility: visible !important;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* Tombol Sidebar */
-[data-testid="stSidebar"] .stButton > button {
-    background: transparent;
-    color: white;
-    border: none;
-    text-align: left;
-    padding: 12px 15px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    margin-bottom: 5px;
+/* SIDEBAR LOGO */
+.sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
+.sb-logo-icon { font-size: 2.5rem; }
+.sb-logo-text h2 { margin: 0; font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; }
+.sb-logo-text p { margin: 0; font-size: 0.75rem; color: #A7F3D0; line-height: 1.2; }
+
+/* NAVIGASI RADIO BUTTON (Menu Putih saat Aktif) */
+[data-testid="stSidebar"] .stRadio > div { gap: 0.3rem; padding: 0 15px;}
+[data-testid="stSidebar"] .stRadio label {
+    display: flex; align-items: center; padding: 12px 15px;
+    border-radius: 10px; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.2s; border: none;
 }
-[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(255,255,255,0.2);
-    transform: translateX(5px);
+[data-testid="stSidebar"] .stRadio label:hover { background-color: rgba(255,255,255,0.1); }
+[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none; } /* Sembunyikan bulatan radio */
+[data-testid="stSidebar"] .stRadio input:checked + div + div label {
+    background-color: white; color: #006B62 !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.2); margin: 15px 0; }
+
+/* SIDEBAR BOTTOM (Quote & Ilustrasi) */
+.sb-bottom { position: relative; padding: 20px; margin-top: 50px; text-align: center; }
+.sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
+.sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
 
 /* HEADER ATAS */
 .top-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    padding: 1.5rem 2rem;
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 20px rgba(13, 148, 136, 0.05);
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; padding: 1.5rem 2rem; border-radius: 16px;
+    margin-bottom: 1.5rem; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.05);
     border: 1px solid #E2E8F0;
 }
-.top-header h1 { margin: 0; font-size: 1.5rem; font-weight: 900; color: var(--teal-dark); }
+.top-header h1 { margin: 0; font-size: 1.6rem; font-weight: 900; color: var(--teal-dark); }
 .top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;}
 
 /* KPI CARDS */
@@ -152,11 +153,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 /* TOMBOL DEFAULT */
 .stButton > button { background: var(--teal); color: white; border-radius: 8px; font-weight: 800; width: 100%; border: none; padding: 0.5rem;}
 .stButton > button:hover { background: var(--teal-dark); color: white; border: none;}
-
-/* TABS */
-.stTabs [data-baseweb="tab-list"] { gap: 1rem; border-bottom: 2px solid #E2E8F0; }
-.stTabs [data-baseweb="tab"] { font-weight: 800; color: var(--text-muted); padding-bottom: 10px;}
-.stTabs [aria-selected="true"] { color: var(--teal) !important; border-bottom: 3px solid var(--teal) !important; }
 
 /* TABEL */
 .stDataFrame { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
@@ -325,56 +321,77 @@ def halaman_login():
                         else: st.error(msg)
 
 # ================================================================
-# ROUTING & SIDEBAR
+# ROUTING & SIDEBAR (DESAIN PERSIS GAMBAR)
 # ================================================================
 if not st.session_state.logged_in:
     halaman_login()
     st.stop()
 
 with st.sidebar:
-    st.markdown(f"<h3 style='text-align:center; font-weight:900; margin-bottom:0;'>Dashboard</h3>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; font-size:0.75rem; opacity:0.8;'>Sistem Pendukung Keputusan</p>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    if st.button("🏠 Beranda", use_container_width=True): goto_page("home")
-    if st.button("📊 Data Siswa", use_container_width=True): goto_page("monitoring")
-    if st.button("🔬 Analisis Faktor", use_container_width=True): goto_page("kausal")
-    if st.button("💡 Rekomendasi & Laporan", use_container_width=True): goto_page("rekomendasi")
-    if st.button("⚙️ Pengaturan", use_container_width=True): goto_page("pengaturan")
-    if st.button("ℹ️ Tentang Sistem", use_container_width=True): goto_page("tentang")
-    
-    if st.session_state.user_role == "admin":
-        if st.button("👥 Manajemen Pengguna", use_container_width=True): goto_page("admin_users")
-        
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # FOTO SEMI-REALISTIS BUKU DAN TANAMAN
+    # Logo
     st.markdown("""
-    <div style='text-align: center; padding: 0 10px;'>
-        <img src='https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400&auto=format&fit=crop' 
-             style='width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 15px;' 
-             alt='Books'>
-        <p style='font-size: 0.8rem; font-style: italic; color: #E2E8F0; line-height: 1.5;'>
-            "Belajar Hari Ini<br>Untuk Dirimu Yang Lebih Baik ❤️"
-        </p>
+    <div class="sb-logo">
+        <div class="sb-logo-icon">🎓</div>
+        <div class="sb-logo-text">
+            <h2>Dashboard</h2>
+            <p>Prestasi Akademik Siswa<br>SMP Negeri 6 Salatiga</p>
+        </div>
     </div>
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚪 Logout", use_container_width=True):
+
+    # Navigasi Radio Button (Agar menu yang aktif berwarna putih)
+    menu_options = ["🏠 Beranda", "👥 Data Siswa", "🕸️ Analisis Kausal", "📈 Prediksi", "💡 Penjelasan (SHAP)", "📋 Laporan"]
+    if st.session_state.user_role == "admin":
+        menu_options.append("⚙️ Pengaturan Admin")
+        menu_options.append("🚪 Logout")
+    else:
+        menu_options.append("⚙️ Pengaturan")
+        menu_options.append("🚪 Logout")
+
+    # Tentukan index default berdasarkan current_page
+    mapping_menu = {
+        "🏠 Beranda": "home", "👥 Data Siswa": "monitoring", "🕸️ Analisis Kausal": "kausal",
+        "📈 Prediksi": "prediksi", "💡 Penjelasan (SHAP)": "shap", "📋 Laporan": "rekomendasi",
+        "⚙️ Pengaturan": "pengaturan", "⚙️ Pengaturan Admin": "admin_users"
+    }
+    default_idx = 0
+    for i, m in enumerate(menu_options):
+        if mapping_menu.get(m) == st.session_state.current_page:
+            default_idx = i
+            break
+
+    menu_choice = st.radio("Menu", menu_options, index=default_idx, label_visibility="collapsed")
+
+    # Routing aksi
+    if menu_choice == "🚪 Logout":
         add_log("Logout")
         st.session_state.logged_in = False
         st.session_state.user_nama = None
         st.rerun()
+    else:
+        new_page = mapping_menu.get(menu_choice)
+        if new_page and st.session_state.current_page != new_page:
+            st.session_state.current_page = new_page
+            st.rerun()
+
+    # Ilustrasi Buku & Quote
+    st.markdown("""
+    <div class="sb-bottom">
+        <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
+        <img src="https://cdn-icons-png.flaticon.com/512/3145/3145765.png" class="sb-img" style="filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5));">
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # ================================================================
-# HALAMAN BERANDA (BERSIH)
+# HALAMAN BERANDA (SAPAAN NAMA LENGKAP)
 # ================================================================
 if st.session_state.current_page == "home":
     st.markdown(f"""
     <div class="top-header">
         <div>
-            <h1>👋 Halo, Selamat Datang!</h1>
+            <h1>👋 Halo, Selamat Datang {st.session_state.user_nama}!</h1>
             <p>Daftar lengkap informasi dan data analisis prestasi akademik Anda.</p>
         </div>
         <div><h2 style="color:#0D9488; margin:0; font-weight:900;">SMPN 6 Salatiga 🏫</h2></div>
@@ -434,6 +451,21 @@ if st.session_state.current_page == "home":
             ''', unsafe_allow_html=True)
             if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
                 goto_page(page)
+
+# ================================================================
+# PLACEHOLDER UNTUK MODUL LAIN (SESUAIKAN DENGAN KEBUTUHAN)
+# ================================================================
+elif st.session_state.current_page == "prediksi":
+    st.title("📈 Prediksi")
+    st.info("Halaman ini berisi prediksi nilai siswa berdasarkan profil 8 faktor.")
+    # (Logika prediksi bisa ditambahkan di sini)
+
+elif st.session_state.current_page == "shap":
+    st.title("💡 Penjelasan (SHAP)")
+    st.info("Halaman ini berisi visualisasi SHAP untuk penjelasan kontribusi fitur secara global.")
+    df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh")
+    fig = px.bar(df_ate, x="Pengaruh", y="Faktor", orientation='h', color="Pengaruh", color_continuous_scale="RdBu")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ================================================================
 # MODUL ADMIN: MANAJEMEN PENGGUNA
