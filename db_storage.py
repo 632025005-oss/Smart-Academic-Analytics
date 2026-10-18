@@ -60,7 +60,6 @@ def insert_siswa(data):
 def hapus_semua_siswa(guru_nama):
     return _db().siswa.delete_many({"Dicatat Oleh": guru_nama}).deleted_count
 
-# FUNGSI BARU UNTUK ADMIN
 def load_all_siswa():
     """Memuat SEMUA data siswa dari semua guru (Khusus Admin)."""
     siswa = []
@@ -133,6 +132,9 @@ def tambah_log(entry):
         ids = [d["_id"] for d in oldest]
         _db().log.delete_many({"_id": {"$in": ids}})
 
-        def hapus_semua_siswa_admin():
+# ================================================================
+# ADMIN: HAPUS SEMUA SISWA
+# ================================================================
+def hapus_semua_siswa_admin():
     """Menghapus SELURUH data siswa dari semua guru (Khusus Admin)."""
     return _db().siswa.delete_many({}).deleted_count
