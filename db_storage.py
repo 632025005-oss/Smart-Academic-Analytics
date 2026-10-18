@@ -212,3 +212,34 @@ def get_statistik_db():
         "log": db.log.count_documents({}),
         "hasil_analisis": db.hasil_analisis.count_documents({}),
     }
+def update_kuesioner_siswa(nama, kelas, absen, profil_faktor):
+    """Memperbarui data kuesioner siswa. Jika siswa belum ada di database, buat baru."""
+    db = _db().siswa
+    # Cari siswa berdasarkan Nama, Kelas, dan Absen (case-insensitive)
+    siswa = db.find_one({
+        "Nama": {"$regex": f"^{nama.strip()}$", "$options": "i"},
+        "Kelas": kelas,
+        "Absen": int(absen)
+    })
+    
+    if siswa:
+        # Jika siswa sudah ada (diupload guru), update nilai faktornya
+        db.update_one(
+            {"_id": siswa["_id"]},
+            {"$set": profil_faktor}
+        )
+        return True, "Data kuesioner berhasil ditambahkan ke data siswa yang sudah ada."
+    else:
+        # Jika siswa belum ada (guru belum upload), buat data baru
+        data_baru = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "Nama": nama.strip(),
+            "Kelas": kelas,
+            "Absen": int(absen),
+            "Nilai Akademik": 0.0, # Belum ada nilai dari guru
+            "Kategori": "Belum Dinilai",
+            **profil_faktor,
+            "Dicatat Oleh": "Siswa (Mandiri)"
+        }
+        db.insert_one(data_baru)
+        return True, "Siswa belum ada di database guru, data kuesioner disimpan sebagai data baru."
