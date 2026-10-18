@@ -555,7 +555,131 @@ elif st.session_state.current_page == "kausal":
     st.markdown("**Tabel Detail**")
     st.dataframe(df_k, use_container_width=True, hide_index=True)
 
-    # ==========================================
+# ================================================================
+# MODUL 04: REKOMENDASI (CATATAN GURU & DOWNLOAD WORD)
+# ================================================================
+elif st.session_state.current_page == "rekomendasi":
+    st.button("← Kembali", on_click=goto_page, args=("home",))
+    st.markdown("## 💡 Modul 04: Rekomendasi & Catatan Guru")
+    st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word.")
+
+    df_siswa = pd.DataFrame(st.session_state.database_siswa)
+    if df_siswa.empty:
+        st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
+        st.stop()
+
+    opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
+    siswa_terpilih = st.selectbox("Pilih Siswa untuk Rekomendasi", opsi_siswa)
+    idx = opsi_siswa.index(siswa_terpilih)
+    b = df_siswa.iloc[idx]
+
+    nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
+    profil = {
+        "Self-Efficacy Akademik": float(b["Self-Efficacy"]),
+        "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
+        "Harapan Orang Tua": float(b["Harapan Ortu"]),
+        "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
+        "Motivasi Belajar": float(b["Motivasi"]),
+        "Kecemasan Akademik": float(b["Kecemasan"]),
+        "Fasilitas Sekolah": float(b["Fasilitas"]),
+        "Kemalasan Belajar": float(b["Kemalasan"]),
+    }
+    selisih, kontribusi = analisis_kausal(nilai, profil)
+    kategori, warna_kategori = kategori_nilai(nilai)
+
+    df_k = pd.DataFrame([
+        {"Aspek": k, "Kontribusi": v, "Nilai_Siswa": profil[k],
+         "Baseline": BASELINE_ASPEK[k],
+         "Selisih": profil[k] - BASELINE_ASPEK[k]}
+        for k, v in kontribusi.items()
+    ]).sort_values("Kontribusi")
+    neg = df_k[df_k["Kontribusi"] < -0.1].sort_values("Kontribusi")
+    pos = df_k[df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
+
+    posisi = "di atas" if selisih >= 0 else "di bawah"
+    fn = neg.iloc[0] if len(neg) > 0 else None
+    fp = pos.iloc[0] if len(pos) > 0 else None
+
+    narasi_neg = (
+        f"Faktor yang paling menekan nilai <b>{nama}</b> adalah "
+        f"<b style='color:#EF5B67;'>{fn['Aspek']}</b> "
+        f"(kontribusi {fn['Kontribusi']:.2f} poin)."
+    ) if fn is not None else "Tidak ada faktor yang signifikan menekan nilai."
+
+    narasi_pos = (
+        f"Kekuatan utama terletak pada <b style='color:#10B981;'>{fp['Aspek']}</b> "
+        f"(kontribusi +{fp['Kontribusi']:.2f} poin)."
+    ) if fp is not None else "Belum ada faktor kekuatan dominan."
+
+    st.markdown(
+        f'<div class="glass-card" style="border-left:5px solid {warna_kategori};margin-top:1rem;">'
+        f'<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">'
+        f'<div style="width:56px;height:56px;border-radius:15px;background:{warna_kategori};color:white;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;">'
+        f'{"".join(x[0] for x in nama.split()[:2]).upper()}</div>'
+        f'<div><div style="font-weight:800;font-size:1.3rem;">{nama}</div>'
+        f'<div style="color:#64748B;font-size:.8rem;">{kelas} - Absen {absen:02d} - Nilai {nilai:.2f}</div>'
+        f'</div></div>'
+        f'<div style="font-size:.95rem;line-height:1.75;color:#1E293B;">'
+        f'Nilai saat ini <b>{abs(selisih):.2f} poin {posisi} rata-rata sekolah</b> ({RATA_RATA_NILAI:.2f}).'
+        f'<br><br>{narasi_neg}<br><br>{narasi_pos}<br><br>'
+        f'<b>Kategori:</b> <span style="color:{warna_kategori};font-weight:800;">{kategori}</span>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### Prioritas Perbaikan (3 Hal Utama)")
+    prioritas = neg.head(3)
+    if len(prioritas) == 0:
+        st.success("Tidak ada prioritas perbaikan mendesak.")
+    else:
+        cols = st.columns(len(prioritas))
+        for i, (_, row) in enumerate(prioritas.iterrows()):
+            with cols[i]:
+                gap_val = row["Selisih"]
+                level = "Segera" if gap_val < -1 else "Perhatian" if gap_val < -0.5 else "Pantau"
+                st.markdown(
+                    f'<div class="glass-card" style="border-top:4px solid #EF5B67;min-height:200px;">'
+                    f'<div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;color:#EF5B67;">PRIORITAS {i + 1}</div>'
+                    f'<div style="font-weight:800;font-size:1rem;margin:.6rem 0 .3rem;">{row["Aspek"]}</div>'
+                    f'<div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem;">{level}</div>'
+                    f'<div style="font-size:.75rem;line-height:1.6;color:#475467;">'
+                    f'Nilai siswa: <b>{row["Nilai_Siswa"]:.2f}</b><br>'
+                    f'Rata-rata: <b>{row["Baseline"]:.2f}</b><br>'
+                    f'<span style="color:#EF5B67;font-weight:700;">Selisih: {row["Selisih"]:+.2f}</span>'
+                    f'</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+    st.markdown("### Tindak Lanjut (Checklist Guru & Siswa)")
+    TINDAK = {
+        "Self-Efficacy Akademik": {"guru": ["Berikan tugas bertahap", "Pujian spesifik atas usaha", "Ajak refleksi mingguan", "Pasangkan dengan peer-mentor"], "siswa": ["Jurnal harian 1 hal yang berhasil", "Tetapkan target kecil mingguan"]},
+        "Keterlibatan Orang Tua": {"guru": ["Kirim kabar positif ke orang tua", "Ajak orang tua ikut sesi belajar", "Panduan mendampingi belajar 15 menit/hari", "Komunikasi rutin 2 minggu sekali"], "siswa": ["Ceritakan 1 hal yang dipelajari", "Minta orang tua periksa PR"]},
+        "Harapan Orang Tua": {"guru": ["Pertemuan ekspektasi realistis", "Bantu pahami tahap perkembangan anak", "Sarankan fokus pada usaha", "Contoh memotivasi tanpa menekan"], "siswa": ["Belajar menyampaikan perasaan", "Fokus pada usaha yang bisa dikontrol"]},
+        "Dukungan Sekolah": {"guru": ["Refleksi bantuan berlebih", "Kurangi bantuan yang bisa dilakukan sendiri", "Berikan kesempatan mencoba", "Fokus membimbing, bukan menggantikan"], "siswa": ["Coba selesaikan tugas 10 menit sebelum bertanya", "Catat apa yang sudah dicoba"]},
+        "Motivasi Belajar": {"guru": ["Kaitkan materi dengan kehidupan nyata", "Berikan pilihan tugas", "Apresiasi proses", "Ciptakan suasana kelas menyenangkan"], "siswa": ["Cari 1 hal menarik dari tiap pelajaran", "Belajar bersama teman"]},
+        "Kecemasan Akademik": {"guru": ["Ajarkan teknik relaksasi", "Ubah suasana ujian lebih santai", "Ujian formatif yang tidak menakutkan", "Normalisasi cemas itu wajar"], "siswa": ["Latihan pernapasan 4-7-8", "Persiapan lebih awal"]},
+        "Fasilitas Sekolah": {"guru": ["Informasikan fasilitas yang tersedia", "Bantu akses perpustakaan atau lab", "Cek hambatan akses"], "siswa": ["Manfaatkan perpustakaan", "Tanyakan ke guru jika butuh bantuan"]},
+        "Kemalasan Belajar": {"guru": ["Cari akar kemalasan", "Beri tugas lebih menantang jika bosan", "Pecah tugas besar jadi langkah kecil", "Buat sistem reward sederhana"], "siswa": ["Mulai dari tugas 5 menit", "Gunakan teknik Pomodoro"]},
+    }
+
+    if len(prioritas) == 0:
+        st.info("Tidak ada tindak lanjut khusus.")
+    else:
+        for i, (_, row) in enumerate(prioritas.iterrows()):
+            aspek = row["Aspek"]
+            tugas = TINDAK.get(aspek, {"guru": [], "siswa": []})
+            with st.expander(f"Prioritas {i + 1}: {aspek}", expanded=(i == 0)):
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown("**Yang bisa dilakukan GURU:**")
+                    for j, t in enumerate(tugas["guru"], 1):
+                        st.markdown(f"{j}. {t}")
+                with c2:
+                    st.markdown("**Yang bisa dilakukan SISWA:**")
+                    for j, s in enumerate(tugas["siswa"], 1):
+                        st.markdown(f"{j}. {s}")
+
+         # ==========================================
     # FITUR DOWNLOAD LAPORAN (WORD, PDF, & ZIP)
     # ==========================================
     st.markdown("---")
