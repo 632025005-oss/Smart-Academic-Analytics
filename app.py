@@ -541,7 +541,7 @@ elif st.session_state.current_page == "kausal":
     st.markdown("## 🔬 Modul 03: Analisis Faktor Siswa")
     st.write("Lihat faktor apa saja yang paling mempengaruhi nilai siswa secara spesifik.")
 
-       df_all = pd.DataFrame(st.session_state.database_siswa)
+    df_all = pd.DataFrame(st.session_state.database_siswa)
     if df_all.empty:
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
         st.stop()
