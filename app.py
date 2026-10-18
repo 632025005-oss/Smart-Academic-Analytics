@@ -555,224 +555,249 @@ elif st.session_state.current_page == "kausal":
     st.markdown("**Tabel Detail**")
     st.dataframe(df_k, use_container_width=True, hide_index=True)
 
-# ================================================================
-# MODUL 04: REKOMENDASI (CATATAN GURU & DOWNLOAD WORD)
-# ================================================================
-elif st.session_state.current_page == "rekomendasi":
-    st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 💡 Modul 04: Rekomendasi & Catatan Guru")
-    st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word.")
-
-    df_siswa = pd.DataFrame(st.session_state.database_siswa)
-    if df_siswa.empty:
-        st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
-        st.stop()
-
-    opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
-    siswa_terpilih = st.selectbox("Pilih Siswa untuk Rekomendasi", opsi_siswa)
-    idx = opsi_siswa.index(siswa_terpilih)
-    b = df_siswa.iloc[idx]
-
-    nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
-    profil = {
-        "Self-Efficacy Akademik": float(b["Self-Efficacy"]),
-        "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
-        "Harapan Orang Tua": float(b["Harapan Ortu"]),
-        "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
-        "Motivasi Belajar": float(b["Motivasi"]),
-        "Kecemasan Akademik": float(b["Kecemasan"]),
-        "Fasilitas Sekolah": float(b["Fasilitas"]),
-        "Kemalasan Belajar": float(b["Kemalasan"]),
-    }
-    selisih, kontribusi = analisis_kausal(nilai, profil)
-    kategori, warna_kategori = kategori_nilai(nilai)
-
-    df_k = pd.DataFrame([
-        {"Aspek": k, "Kontribusi": v, "Nilai_Siswa": profil[k],
-         "Baseline": BASELINE_ASPEK[k],
-         "Selisih": profil[k] - BASELINE_ASPEK[k]}
-        for k, v in kontribusi.items()
-    ]).sort_values("Kontribusi")
-    neg = df_k[df_k["Kontribusi"] < -0.1].sort_values("Kontribusi")
-    pos = df_k[df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
-
-    posisi = "di atas" if selisih >= 0 else "di bawah"
-    fn = neg.iloc[0] if len(neg) > 0 else None
-    fp = pos.iloc[0] if len(pos) > 0 else None
-
-    narasi_neg = (
-        f"Faktor yang paling menekan nilai <b>{nama}</b> adalah "
-        f"<b style='color:#EF5B67;'>{fn['Aspek']}</b> "
-        f"(kontribusi {fn['Kontribusi']:.2f} poin)."
-    ) if fn is not None else "Tidak ada faktor yang signifikan menekan nilai."
-
-    narasi_pos = (
-        f"Kekuatan utama terletak pada <b style='color:#10B981;'>{fp['Aspek']}</b> "
-        f"(kontribusi +{fp['Kontribusi']:.2f} poin)."
-    ) if fp is not None else "Belum ada faktor kekuatan dominan."
-
-    st.markdown(
-        f'<div class="glass-card" style="border-left:5px solid {warna_kategori};margin-top:1rem;">'
-        f'<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">'
-        f'<div style="width:56px;height:56px;border-radius:15px;background:{warna_kategori};color:white;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;">'
-        f'{"".join(x[0] for x in nama.split()[:2]).upper()}</div>'
-        f'<div><div style="font-weight:800;font-size:1.3rem;">{nama}</div>'
-        f'<div style="color:#64748B;font-size:.8rem;">{kelas} - Absen {absen:02d} - Nilai {nilai:.2f}</div>'
-        f'</div></div>'
-        f'<div style="font-size:.95rem;line-height:1.75;color:#1E293B;">'
-        f'Nilai saat ini <b>{abs(selisih):.2f} poin {posisi} rata-rata sekolah</b> ({RATA_RATA_NILAI:.2f}).'
-        f'<br><br>{narasi_neg}<br><br>{narasi_pos}<br><br>'
-        f'<b>Kategori:</b> <span style="color:{warna_kategori};font-weight:800;">{kategori}</span>'
-        f'</div></div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### Prioritas Perbaikan (3 Hal Utama)")
-    prioritas = neg.head(3)
-    if len(prioritas) == 0:
-        st.success("Tidak ada prioritas perbaikan mendesak.")
-    else:
-        cols = st.columns(len(prioritas))
-        for i, (_, row) in enumerate(prioritas.iterrows()):
-            with cols[i]:
-                gap_val = row["Selisih"]
-                level = "Segera" if gap_val < -1 else "Perhatian" if gap_val < -0.5 else "Pantau"
-                st.markdown(
-                    f'<div class="glass-card" style="border-top:4px solid #EF5B67;min-height:200px;">'
-                    f'<div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;color:#EF5B67;">PRIORITAS {i + 1}</div>'
-                    f'<div style="font-weight:800;font-size:1rem;margin:.6rem 0 .3rem;">{row["Aspek"]}</div>'
-                    f'<div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem;">{level}</div>'
-                    f'<div style="font-size:.75rem;line-height:1.6;color:#475467;">'
-                    f'Nilai siswa: <b>{row["Nilai_Siswa"]:.2f}</b><br>'
-                    f'Rata-rata: <b>{row["Baseline"]:.2f}</b><br>'
-                    f'<span style="color:#EF5B67;font-weight:700;">Selisih: {row["Selisih"]:+.2f}</span>'
-                    f'</div></div>',
-                    unsafe_allow_html=True,
-                )
-
-    st.markdown("### Tindak Lanjut (Checklist Guru & Siswa)")
-    TINDAK = {
-        "Self-Efficacy Akademik": {"guru": ["Berikan tugas bertahap", "Pujian spesifik atas usaha", "Ajak refleksi mingguan", "Pasangkan dengan peer-mentor"], "siswa": ["Jurnal harian 1 hal yang berhasil", "Tetapkan target kecil mingguan"]},
-        "Keterlibatan Orang Tua": {"guru": ["Kirim kabar positif ke orang tua", "Ajak orang tua ikut sesi belajar", "Panduan mendampingi belajar 15 menit/hari", "Komunikasi rutin 2 minggu sekali"], "siswa": ["Ceritakan 1 hal yang dipelajari", "Minta orang tua periksa PR"]},
-        "Harapan Orang Tua": {"guru": ["Pertemuan ekspektasi realistis", "Bantu pahami tahap perkembangan anak", "Sarankan fokus pada usaha", "Contoh memotivasi tanpa menekan"], "siswa": ["Belajar menyampaikan perasaan", "Fokus pada usaha yang bisa dikontrol"]},
-        "Dukungan Sekolah": {"guru": ["Refleksi bantuan berlebih", "Kurangi bantuan yang bisa dilakukan sendiri", "Berikan kesempatan mencoba", "Fokus membimbing, bukan menggantikan"], "siswa": ["Coba selesaikan tugas 10 menit sebelum bertanya", "Catat apa yang sudah dicoba"]},
-        "Motivasi Belajar": {"guru": ["Kaitkan materi dengan kehidupan nyata", "Berikan pilihan tugas", "Apresiasi proses", "Ciptakan suasana kelas menyenangkan"], "siswa": ["Cari 1 hal menarik dari tiap pelajaran", "Belajar bersama teman"]},
-        "Kecemasan Akademik": {"guru": ["Ajarkan teknik relaksasi", "Ubah suasana ujian lebih santai", "Ujian formatif yang tidak menakutkan", "Normalisasi cemas itu wajar"], "siswa": ["Latihan pernapasan 4-7-8", "Persiapan lebih awal"]},
-        "Fasilitas Sekolah": {"guru": ["Informasikan fasilitas yang tersedia", "Bantu akses perpustakaan atau lab", "Cek hambatan akses"], "siswa": ["Manfaatkan perpustakaan", "Tanyakan ke guru jika butuh bantuan"]},
-        "Kemalasan Belajar": {"guru": ["Cari akar kemalasan", "Beri tugas lebih menantang jika bosan", "Pecah tugas besar jadi langkah kecil", "Buat sistem reward sederhana"], "siswa": ["Mulai dari tugas 5 menit", "Gunakan teknik Pomodoro"]},
-    }
-
-    if len(prioritas) == 0:
-        st.info("Tidak ada tindak lanjut khusus.")
-    else:
-        for i, (_, row) in enumerate(prioritas.iterrows()):
-            aspek = row["Aspek"]
-            tugas = TINDAK.get(aspek, {"guru": [], "siswa": []})
-            with st.expander(f"Prioritas {i + 1}: {aspek}", expanded=(i == 0)):
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown("**Yang bisa dilakukan GURU:**")
-                    for j, t in enumerate(tugas["guru"], 1):
-                        st.markdown(f"{j}. {t}")
-                with c2:
-                    st.markdown("**Yang bisa dilakukan SISWA:**")
-                    for j, s in enumerate(tugas["siswa"], 1):
-                        st.markdown(f"{j}. {s}")
-
-       # ==========================================
-    # FITUR DOWNLOAD LAPORAN WORD 
+    # ==========================================
+    # FITUR DOWNLOAD LAPORAN (WORD, PDF, & ZIP)
     # ==========================================
     st.markdown("---")
-    st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
-    st.write("Laporan ini sudah dirancang dengan bahasa yang mudah dipahami oleh guru dan orang tua.")
+    st.markdown("### 📄 Unduh Laporan Konsultasi")
+    st.write("Laporan ini dirancang dengan bahasa yang mudah dipahami dan siap di-print.")
 
-    if st.button("📥 Buat & Unduh Laporan Word", type="primary", use_container_width=True):
+    # --- FUNGSI PEMBUAT DOKUMEN (Dibuat terpisah agar bisa dipakai berulang) ---
+    def buat_dokumen_word(siswa_data):
+        from docx import Document
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        doc = Document()
+        
+        header = doc.add_heading('LAPORAN PERKEMBANGAN SISWA', 0)
+        header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        subheader = doc.add_paragraph('Smart Academic Analytics (SAA) - SMPN 6 Salatiga')
+        subheader.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        doc.add_paragraph()
+
+        table = doc.add_table(rows=4, cols=2)
+        table.style = 'Table Grid'
+        table.rows[0].cells[0].text = 'Nama Siswa'
+        table.rows[0].cells[1].text = siswa_data['nama']
+        table.rows[1].cells[0].text = 'Kelas / Absen'
+        table.rows[1].cells[1].text = f"{siswa_data['kelas']} / {siswa_data['absen']}"
+        table.rows[2].cells[0].text = 'Nilai Rata-rata'
+        table.rows[2].cells[1].text = f"{siswa_data['nilai']:.2f}"
+        table.rows[3].cells[0].text = 'Kategori'
+        table.rows[3].cells[1].text = siswa_data['kategori']
+
+        doc.add_paragraph()
+        doc.add_heading('Ringkasan Kondisi', level=1)
+        posisi_teks = "di atas" if siswa_data['selisih'] >= 0 else "di bawah"
+        doc.add_paragraph(f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah. Berdasarkan analisis, {siswa_data['nama']} masuk dalam kategori {siswa_data['kategori']}.")
+
+        doc.add_heading('Catatan untuk Orang Tua & Guru', level=1)
+        if siswa_data['fp'] is not None:
+            doc.add_paragraph(f"KEKUATAN UTAMA: {siswa_data['nama']} menunjukkan sikap yang sangat baik pada aspek {siswa_data['fp']['Aspek']}. Hal ini menjadi modal penting untuk terus berkembang.")
+        
+        if siswa_data['fn'] is not None:
+            doc.add_paragraph(f"AREA YANG PERLU DIDAMPINGI: Untuk meningkatkan hasil belajar, kita bisa fokus membantu {siswa_data['nama']} pada aspek {siswa_data['fn']['Aspek']}. Berikut saran tindak lanjutnya:")
+            
+            saran_guru = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
+            saran_siswa = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
+            
+            doc.add_paragraph("Saran untuk Guru/Sekolah:", style='List Bullet')
+            for s in saran_guru[:3]:
+                doc.add_paragraph(s, style='List Bullet 2')
+            doc.add_paragraph("Saran untuk Siswa/Orang Tua di Rumah:", style='List Bullet')
+            for s in saran_siswa[:2]:
+                doc.add_paragraph(s, style='List Bullet 2')
+
+        doc.add_paragraph()
+        ttd_table = doc.add_table(rows=2, cols=2)
+        ttd_table.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        ttd_table.rows[0].cells[0].text = 'Guru / Konselor,'
+        ttd_table.rows[0].cells[1].text = f"Salatiga, {datetime.now().strftime('%d %B %Y')}"
+        ttd_table.rows[1].cells[0].text = '\n\n\n\n(_______________________)'
+        ttd_table.rows[1].cells[1].text = f'\n\n\n\n( {st.session_state.user_nama} )'
+
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer
+
+    def buat_dokumen_pdf(siswa_data):
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Header
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, 'LAPORAN PERKEMBANGAN SISWA', ln=True, align='C')
+        pdf.set_font("Arial", 'I', 10)
+        pdf.cell(0, 10, 'Smart Academic Analytics (SAA) - SMPN 6 Salatiga', ln=True, align='C')
+        pdf.ln(10)
+
+        # Info Siswa
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(40, 8, 'Nama Siswa', border=1)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(0, 8, siswa_data['nama'], border=1, ln=True)
+        
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(40, 8, 'Kelas / Absen', border=1)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(0, 8, f"{siswa_data['kelas']} / {siswa_data['absen']}", border=1, ln=True)
+        
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(40, 8, 'Nilai Rata-rata', border=1)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(0, 8, f"{siswa_data['nilai']:.2f}", border=1, ln=True)
+        
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(40, 8, 'Kategori', border=1)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(0, 8, siswa_data['kategori'], border=1, ln=True)
+        pdf.ln(10)
+
+        # Ringkasan
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 8, 'Ringkasan Kondisi', ln=True)
+        pdf.set_font("Arial", '', 11)
+        posisi_teks = "di atas" if siswa_data['selisih'] >= 0 else "di bawah"
+        teks_ringkasan = f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah. Berdasarkan analisis, {siswa_data['nama']} masuk dalam kategori {siswa_data['kategori']}."
+        pdf.multi_cell(0, 6, teks_ringkasan)
+        pdf.ln(5)
+
+        # Catatan
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 8, 'Catatan untuk Orang Tua & Guru', ln=True)
+        
+        pdf.set_font("Arial", '', 11)
+        if siswa_data['fp'] is not None:
+            teks_kekuatan = f"KEKUATAN UTAMA: {siswa_data['nama']} menunjukkan sikap yang sangat baik pada aspek {siswa_data['fp']['Aspek']}."
+            pdf.multi_cell(0, 6, teks_kekuatan)
+            pdf.ln(2)
+        
+        if siswa_data['fn'] is not None:
+            teks_area = f"AREA YANG PERLU DIDAMPINGI: Fokus pada aspek {siswa_data['fn']['Aspek']}."
+            pdf.multi_cell(0, 6, teks_area)
+            pdf.ln(2)
+            
+            saran_guru = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
+            saran_siswa = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
+            
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 6, 'Saran untuk Guru/Sekolah:', ln=True)
+            pdf.set_font("Arial", '', 11)
+            for s in saran_guru[:3]:
+                pdf.multi_cell(0, 6, f"- {s}")
+                
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 6, 'Saran untuk Siswa/Orang Tua di Rumah:', ln=True)
+            pdf.set_font("Arial", '', 11)
+            for s in saran_siswa[:2]:
+                pdf.multi_cell(0, 6, f"- {s}")
+
+        # Tanda Tangan
+        pdf.ln(15)
+        pdf.cell(100, 8, 'Guru / Konselor,', ln=False)
+        pdf.cell(0, 8, f"Salatiga, {datetime.now().strftime('%d %B %Y')}", ln=True)
+        pdf.ln(15)
+        pdf.cell(100, 8, '(_______________________)', ln=False)
+        pdf.cell(0, 8, f"( {st.session_state.user_nama} )", ln=True)
+
+        # Output PDF
+        pdf_output = pdf.output(dest='S').encode('latin-1') # fpdf2 butuh format bytes
+        return io.BytesIO(pdf_output)
+
+    # Siapkan Data Siswa
+    data_laporan = {
+        'nama': nama, 'kelas': kelas, 'absen': absen, 'nilai': nilai,
+        'kategori': kategori, 'selisih': selisih, 'fp': fp, 'fn': fn, 'tindak': TINDAK
+    }
+
+    # --- TOMBOL DOWNLOAD INDIVIDU ---
+    col_word, col_pdf = st.columns(2)
+    
+    with col_word:
+        if st.button("📥 Download Laporan (Word)", type="primary", use_container_width=True):
+            try:
+                file_word = buat_dokumen_word(data_laporan)
+                st.download_button(
+                    label="⬇️ Klik di Sini untuk Simpan Word",
+                    data=file_word,
+                    file_name=f"Laporan_{nama.replace(' ', '_')}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+            except Exception as e:
+                st.error(f"Gagal membuat Word: {e}")
+                
+    with col_pdf:
+        if st.button("📥 Download Laporan (PDF)", type="primary", use_container_width=True):
+            try:
+                file_pdf = buat_dokumen_pdf(data_laporan)
+                st.download_button(
+                    label="⬇️ Klik di Sini untuk Simpan PDF",
+                    data=file_pdf,
+                    file_name=f"Laporan_{nama.replace(' ', '_')}.pdf",
+                    mime="application/pdf"
+                )
+            except Exception as e:
+                st.error(f"Gagal membuat PDF: {e}")
+
+    # --- TOMBOL DOWNLOAD SEMUA (ZIP) ---
+    st.markdown("---")
+    st.markdown("### 🗂️ Unduh Semua Laporan (Massal)")
+    st.write("Unduh laporan seluruh siswa Anda dalam satu file ZIP.")
+    
+    if st.button("📦 Buat File ZIP (Semua Siswa)", use_container_width=True):
+        import zipfile
         try:
-            from docx import Document
-            from docx.shared import Pt, Inches
-            from docx.enum.text import WD_ALIGN_PARAGRAPH
-
-            doc = Document()
-            
-            # Header
-            header = doc.add_heading('LAPORAN PERKEMBANGAN SISWA', 0)
-            header.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            
-            subheader = doc.add_paragraph('Smart Academic Analytics (SAA) - SMPN 6 Salatiga')
-            subheader.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            doc.add_paragraph()
-
-            # Info Siswa
-            table = doc.add_table(rows=4, cols=2)
-            table.style = 'Table Grid'
-            cells = table.rows[0].cells
-            cells[0].text = 'Nama Siswa'
-            cells[1].text = nama
-            cells = table.rows[1].cells
-            cells[0].text = 'Kelas / Absen'
-            cells[1].text = f"{kelas} / {absen}"
-            cells = table.rows[2].cells
-            cells[0].text = 'Nilai Rata-rata'
-            cells[1].text = f"{nilai:.2f}"
-            cells = table.rows[3].cells
-            cells[0].text = 'Kategori'
-            cells[1].text = kategori
-
-            doc.add_paragraph()
-            
-            # Ringkasan Kondisi
-            doc.add_heading('Ringkasan Kondisi', level=1)
-            posisi_teks = "di atas" if selisih >= 0 else "di bawah"
-            doc.add_paragraph(f"Saat ini, {nama} memiliki nilai rata-rata {nilai:.2f}, yang berada {abs(selisih):.2f} poin {posisi_teks} rata-rata sekolah. Berdasarkan analisis, {nama} masuk dalam kategori {kategori}.")
-
-            # Kekuatan & Area Pengembangan (Bahasa Awam)
-            doc.add_heading('Catatan untuk Orang Tua & Guru', level=1)
-            
-            if fp is not None:
-                doc.add_paragraph(f"🌟 Kekuatan Utama: {nama} menunjukkan sikap yang sangat baik pada aspek {fp['Aspek']}. Hal ini menjadi modal penting untuk terus berkembang.")
-            
-            if fn is not None:
-                doc.add_paragraph(f"🎯 Area yang Perlu Didampingi: Untuk meningkatkan hasil belajar, kita bisa fokus membantu {nama} pada aspek {fn['Aspek']}. Berikut adalah saran tindak lanjut yang bisa dilakukan:")
-                
-                # Mengambil saran dari kamus TINDAK yang sudah ada
-                saran_guru = TINDAK.get(fn['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
-                saran_siswa = TINDAK.get(fn['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
-                
-                doc.add_paragraph("Saran untuk Guru/Sekolah:", style='List Bullet')
-                for s in saran_guru[:3]: # Ambil 3 saran teratas
-                    doc.add_paragraph(s, style='List Bullet 2')
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                for _, row in df_siswa.iterrows():
+                    # Ambil data per siswa
+                    s_nama = row["Nama"]
+                    s_profil = {
+                        "Self-Efficacy Akademik": float(row["Self-Efficacy"]),
+                        "Keterlibatan Orang Tua": float(row["Keterlibatan Ortu"]),
+                        "Harapan Orang Tua": float(row["Harapan Ortu"]),
+                        "Dukungan Sekolah": float(row["Dukungan Sekolah"]),
+                        "Motivasi Belajar": float(row["Motivasi"]),
+                        "Kecemasan Akademik": float(row["Kecemasan"]),
+                        "Fasilitas Sekolah": float(row["Fasilitas"]),
+                        "Kemalasan Belajar": float(row["Kemalasan"]),
+                    }
+                    s_selisih, s_kontribusi = analisis_kausal(float(row["Nilai Akademik"]), s_profil)
+                    s_kat, _ = kategori_nilai(float(row["Nilai Akademik"]))
                     
-                doc.add_paragraph("Saran untuk Siswa/Orang Tua di Rumah:", style='List Bullet')
-                for s in saran_siswa[:2]: # Ambil 2 saran teratas
-                    doc.add_paragraph(s, style='List Bullet 2')
-
-            doc.add_paragraph()
-
-            # Tanda Tangan
-            ttd_table = doc.add_table(rows=2, cols=2)
-            ttd_table.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            ttd_cells = ttd_table.rows[0].cells
-            ttd_cells[0].text = 'Guru / Konselor,'
-            ttd_cells[1].text = f"Salatiga, {datetime.now().strftime('%d %B %Y')}"
+                    s_df_k = pd.DataFrame([
+                        {"Aspek": k, "Kontribusi": v} for k, v in s_kontribusi.items()
+                    ]).sort_values("Kontribusi")
+                    s_neg = s_df_k[s_df_k["Kontribusi"] < -0.1]
+                    s_pos = s_df_k[s_df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
+                    
+                    s_data = {
+                        'nama': s_nama, 'kelas': row["Kelas"], 'absen': int(row["Absen"]),
+                        'nilai': float(row["Nilai Akademik"]), 'kategori': s_kat,
+                        'selisih': s_selisih, 
+                        'fp': s_pos.iloc[0] if len(s_pos) > 0 else None,
+                        'fn': s_neg.iloc[0] if len(s_neg) > 0 else None, 
+                        'tindak': TINDAK
+                    }
+                    
+                    # Buat dokumen Word (bisa diganti PDF jika mau)
+                    file_buffer = buat_dokumen_word(s_data)
+                    
+                    # Masukkan ke dalam ZIP
+                    nama_file = f"Laporan_{s_nama.replace(' ', '_')}.docx"
+                    zip_file.writestr(nama_file, file_buffer.getvalue())
             
-            ttd_cells = ttd_table.rows[1].cells
-            ttd_cells[0].text = '\n\n\n\n(_______________________)'
-            ttd_cells[1].text = f'\n\n\n\n( {st.session_state.user_nama} )'
-
-            # Simpan
-            buffer = io.BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
-
-            st.success("Laporan berhasil dibuat! Silakan unduh di bawah.")
+            zip_buffer.seek(0)
+            st.success(f"Berhasil membuat ZIP berisi {len(df_siswa)} laporan Word!")
             st.download_button(
-                label="⬇️ Download Laporan (.docx)",
-                data=buffer,
-                file_name=f"Laporan_{nama.replace(' ', '_')}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                label="⬇️ Download Semua Laporan (.zip)",
+                data=zip_buffer,
+                file_name="Semua_Laporan_Siswa.zip",
+                mime="application/zip"
             )
         except Exception as e:
-            st.error(f"Gagal membuat dokumen Word. Error: {e}")
+            st.error(f"Gagal membuat ZIP: {e}")
 
 # ================================================================
 # MODUL 05: PENGATURAN
