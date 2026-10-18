@@ -51,7 +51,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN SUPER EYECATCHING)
+# PAGE CONFIG & CSS (SIDEBAR SELALU TERBUKA)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -69,10 +69,15 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
 #MainMenu, footer, header { visibility: hidden; }
 
-/* CSS SIDEBAR (Warna Teal Gradient) */
+/* KUNCI SIDEBAR AGAR SELALU TERBUKA */
+[data-testid="collapsedControl"] { display: none; } /* Hilangkan tombol sembunyikan */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0D9488 0%, #0F766E 100%);
     border-right: none;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    transform: translateX(0) !important;
+    visibility: visible !important;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 [data-testid="stSidebar"] .stButton > button {
@@ -125,14 +130,14 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* KARTU MODUL */
 .module-card {
-    background: white; border-radius: 12px; padding: 1rem; border: 1px solid #E2E8F0;
+    background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid #E2E8F0;
     transition: all 0.3s ease; min-height: 110px; margin-bottom: 0.5rem;
     display: flex; flex-direction: column; justify-content: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
 .module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.1); border-color: var(--teal); }
-.module-icon { font-size: 1.5rem; margin-bottom: 0.5rem;}
-.module-title { font-weight: 800; font-size: 0.95rem; color: #1E293B; margin-bottom: 0.2rem;}
-.module-desc { font-size: 0.7rem; color: #64748B; line-height: 1.4;}
+.module-icon { font-size: 1.8rem; margin-bottom: 0.5rem;}
+.module-title { font-weight: 800; font-size: 1rem; color: #1E293B; margin-bottom: 0.2rem;}
+.module-desc { font-size: 0.75rem; color: #64748B; line-height: 1.4;}
 
 /* TOMBOL DEFAULT */
 .stButton > button { background: var(--teal); color: white; border-radius: 8px; font-weight: 800; width: 100%; border: none; padding: 0.5rem;}
@@ -333,7 +338,7 @@ with st.sidebar:
         
     st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     
-    # Ilustrasi Buku (Emoji)
+    # Ilustrasi Buku
     st.markdown("""
     <div style='text-align: center;'>
         <div style='font-size: 4rem; line-height: 1;'>📚🪴</div>
@@ -351,7 +356,7 @@ with st.sidebar:
         st.rerun()
 
 # ================================================================
-# HALAMAN BERANDA (DASHBOARD EYECATCHING)
+# HALAMAN BERANDA (BERSIH TANPA TAB GRAFIK)
 # ================================================================
 if st.session_state.current_page == "home":
     st.markdown(f"""
@@ -366,7 +371,7 @@ if st.session_state.current_page == "home":
     
     df = pd.DataFrame(st.session_state.database_siswa)
     
-    # KPI Cards
+    # KPI Cards (Hanya 4 Kartu Statistik Siswa, Tanpa Aktivitas)
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon green">👥</div><div class="kpi-info"><h4>Jumlah Siswa</h4><h2>{len(df)}</h2><p>Siswa yang sudah didata</p></div></div>', unsafe_allow_html=True)
@@ -389,49 +394,10 @@ if st.session_state.current_page == "home":
         st.progress(persentase)
         st.write(f"**{sudah_isi}** dari **{total_siswa}** siswa telah mengisi kuesioner.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- TABS GRAFIK (Seperti Gambar) ---
-    tab1, tab2, tab3 = st.tabs(["Overview", "Distribusi Nilai", "Faktor Penyebab"])
-    
-    with tab1:
-        if not df.empty:
-            st.markdown("#### Tren Nilai Rata-rata Siswa")
-            trend_data = pd.DataFrame({'Bulan': ['Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'], 'Nilai': [78, 79, 80, 82, avg, avg]})
-            fig = px.line(trend_data, x='Bulan', y='Nilai', markers=True, color_discrete_sequence=['#0D9488'])
-            fig.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-            fig.update_traces(line=dict(width=4))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Belum ada data untuk ditampilkan.")
-            
-    with tab2:
-        if not df.empty:
-            st.markdown("#### Distribusi Nilai")
-            dist = df['Kategori'].value_counts().reset_index()
-            dist.columns = ['Kategori', 'Jumlah']
-            fig = px.pie(dist, names='Kategori', values='Jumlah', hole=0.6, 
-                         color='Kategori', color_discrete_map={'Sangat Baik':'#10B981', 'Baik':'#3B82F6', 'Cukup':'#F59E0B', 'Perlu Perhatian':'#EF4444', 'Belum Dinilai':'#94A3B8'})
-            fig.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Belum ada data.")
-
-    with tab3:
-        st.markdown("#### Faktor Penyebab (Dampak Sebab-Akibat)")
-        df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh", ascending=False)
-        
-        # Warna batang positif hijau, negatif merah
-        colors = ['#10B981' if x >= 0 else '#EF4444' for x in df_ate['Pengaruh']]
-        
-        fig = px.bar(df_ate, x="Faktor", y="Pengaruh", color="Pengaruh", color_continuous_scale="RdBu")
-        fig.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig, use_container_width=True)
-
     st.markdown("<br><hr>", unsafe_allow_html=True)
     
-    # --- MENU MODUL DI BAWAH ---
-    st.markdown("### Modul Navigasi Cepat")
+    # --- MENU MODUL ---
+    st.markdown("### Modul Navigasi")
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
