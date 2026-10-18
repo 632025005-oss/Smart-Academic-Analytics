@@ -72,30 +72,37 @@ def hapus_semua_siswa(guru_nama):
 
 def update_kuesioner_siswa(nama, kelas, absen, profil_faktor):
     db = _db().siswa
-    # Cari siswa berdasarkan Nama, Kelas, dan Absen (case-insensitive)
-    siswa = db.find_one({
-        "Nama": {"$regex": f"^{nama.strip()}$", "$options": "i"},
-        "Kelas": kelas,
-        "Absen": int(absen)
-    })
-    
-    if siswa:
-        db.update_one({"_id": siswa["_id"]}, {"$set": profil_faktor})
-        return True, "Data kuesioner berhasil ditambahkan ke data siswa yang sudah ada."
-    else:
-        data_baru = {
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "Nama": nama.strip(),
+    try:
+        # Cari siswa berdasarkan Nama, Kelas, dan Absen (case-insensitive)
+        # Jangan pedulikan siapa gurunya, karena siswa mengisi mandiri
+        siswa = db.find_one({
+            "Nama": {"$regex": f"^{nama.strip()}$", "$options": "i"},
             "Kelas": kelas,
-            "Absen": int(absen),
-            "Nilai Akademik": 0.0,
-            "Kategori": "Belum Dinilai",
-            **profil_faktor,
-            "Dicatat Oleh": "Siswa (Mandiri)"
-        }
-        db.insert_one(data_baru)
-        return True, "Siswa belum ada di database guru, data kuesioner disimpan sebagai data baru."
-
+            "Absen": int(absen)
+        })
+        
+        if siswa:
+            # Jika siswa sudah ada (diupload guru atau sudah pernah isi), update datanya
+            db.update_one({"_id": siswa["_id"]}, {"$set": profil_faktor})
+            return True, "Data kuesioner berhasil disimpan/diperbarui pada data siswa Anda."
+        else:
+            # Jika siswa belum ada di database guru, buat data baru
+            data_baru = {
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "Nama": nama.strip(),
+                "Kelas": kelas,
+                "Absen": int(absen),
+                "Nilai Akademik": 0.0,
+                "Kategori": "Belum Dinilai",
+                **profil_faktor,
+                "Dicatat Oleh": "Siswa (Mandiri)"
+            }
+            db.insert_one(data_baru)
+            return True, "Data kuesioner berhasil disimpan. (Menunggu guru menginput nilai)."
+            
+    except Exception as e:
+        # Jika terjadi bentrok (misal siswa iseng mengisi 2x dengan nama beda tapi absen sama)
+        return False, f"Gagal menyimpan: Terjadi duplikasi data atau kesalahan sistem. ({str(e)})"
 # ================================================================
 # CONFIG & LOG
 # ================================================================
