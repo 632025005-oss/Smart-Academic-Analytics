@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.express as px
 from datetime import datetime
 import hashlib
 import json
@@ -16,7 +17,8 @@ from db_storage import (
     load_database, insert_siswa, hapus_semua_siswa,
     load_config, save_config, load_log, save_log, tambah_log,
     update_kuesioner_siswa, load_all_siswa, hapus_siswa_by_id,
-    hapus_semua_siswa_admin)
+    hapus_semua_siswa_admin, cek_status_kuesioner, update_user_password
+)
 
 SUPER_ADMIN = {"admin", "regina"}
 
@@ -116,7 +118,6 @@ def reload_data():
         st.session_state.log = load_log(user=st.session_state.user_nama) 
     else:
         st.session_state.log = []
-        
     st.session_state.config = load_config()
     st.session_state.users = load_users()
 
@@ -128,8 +129,7 @@ def add_log(aksi, detail=""):
         "waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "user": st.session_state.user_nama or "-", 
         "role": st.session_state.user_role or "-",
-        "aksi": aksi, 
-        "detail": detail
+        "aksi": aksi, "detail": detail
     })
 
 def goto_page(page):
@@ -254,6 +254,20 @@ def halaman_login():
 
         with tab_siswa:
             st.info("Isi kuesioner ini dengan jujur. Data akan masuk ke sistem guru Anda.")
+            
+            # Fitur Cek Status
+            with st.expander("🔍 Cek Status Pengisian Kuesioner"):
+                cek_nama = st.text_input("Nama Lengkap", key="cek_nama")
+                cek_kelas = st.selectbox("Kelas", KELAS_LIST, key="cek_kelas")
+                cek_absen = st.number_input("Absen", 1, 50, 1, key="cek_absen")
+                if st.button("Cek Status"):
+                    sudah, pesan = cek_status_kuesioner(cek_nama, cek_kelas, cek_absen)
+                    if sudah:
+                        st.success(f"✅ Anda sudah mengisi kuesioner pada {pesan}.")
+                    else:
+                        st.warning(f"❌ {pesan}")
+            st.markdown("---")
+            
             with st.form("form_kuesioner"):
                 c1, c2, c3 = st.columns([2, 1, 1])
                 k_nama = c1.text_input("Nama Lengkap")
@@ -281,8 +295,11 @@ def halaman_login():
                             "Fasilitas": f8, "Kemalasan": f4
                         }
                         ok, msg = update_kuesioner_siswa(k_nama, k_kelas, k_absen, profil)
-                        if ok: st.success(msg); st.balloons()
-                        else: st.error(msg)
+                        if ok: 
+                            st.success("🎉 Data kuesioner berhasil disimpan. Terima kasih! Terus semangat belajar!")
+                            st.balloons()
+                        else: 
+                            st.error(msg)
 
 # ================================================================
 # ROUTING
@@ -318,13 +335,24 @@ if st.session_state.current_page == "home":
     with col3:
         st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(st.session_state.log)}</div><div class="metric-lbl">Aktivitas Anda</div></div>', unsafe_allow_html=True)
 
+    # Progress Bar Pengisian Kuesioner
+    if not df.empty:
+        total_siswa = len(df)
+        sudah_isi = len(df[df["Self-Efficacy"] > 0])
+        persentase = sudah_isi / total_siswa
+        st.markdown("### 📊 Progres Pengisian Kuesioner")
+        st.progress(persentase)
+        st.write(f"**{sudah_isi}** dari **{total_siswa}** siswa telah mengisi kuesioner.")
+        st.markdown("---")
+
     st.markdown("### Modul Anda")
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
         ("🔬", "Analisis Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
         ("💡", "Rekomendasi", "Saran tindak lanjut personal.", "rekomendasi"),
-        ("⚙️", "Pengaturan", "Pengaturan sistem.", "pengaturan")
+        ("⚙️", "Pengaturan", "Ubah password & pengaturan sistem.", "pengaturan"),
+        ("ℹ️", "Tentang Sistem", "Informasi metode Hybrid Causal-Explainable ML.", "tentang")
     ]
     
     if st.session_state.user_role == "admin":
@@ -418,7 +446,6 @@ elif st.session_state.current_page == "admin_users":
         st.dataframe(df_all[["Nama", "Kelas", "Absen", "Nilai Akademik", "Dicatat Oleh"]], use_container_width=True, hide_index=True)
         
         opsi_hapus = {s["_id"]: f"{s['Nama']} - {s['Kelas']} (Absen {s['Absen']}) - Input oleh: {s.get('Dicatat Oleh', 'Sistem')}" for s in all_siswa}
-        
         siswa_id_terpilih = st.selectbox("Pilih siswa yang akan dihapus:", options=list(opsi_hapus.keys()), format_func=lambda x: opsi_hapus[x])
         
         if st.button("Hapus Data Siswa Ini", type="primary"):
@@ -431,7 +458,6 @@ elif st.session_state.current_page == "admin_users":
         with st.expander("🚨 ZONA BERBAHAYA: Hapus SEMUA Data Siswa"):
             st.warning("Tindakan ini akan menghapus seluruh data siswa dari SEMUA guru secara permanen. Pastikan Anda sudah melakukan backup!")
             konfirmasi = st.checkbox("Saya mengerti dan ingin menghapus SEMUA data siswa.")
-            
             if st.button("Hapus SEMUA Data Siswa", type="primary", disabled=not konfirmasi):
                 jumlah = hapus_semua_siswa_admin()
                 st.success(f"Berhasil menghapus {jumlah} data siswa dari database.")
@@ -524,7 +550,33 @@ elif st.session_state.current_page == "monitoring":
     if df.empty:
         st.warning("Belum ada data siswa. Silakan input atau upload di Modul 01.")
     else:
-        st.dataframe(df[["Nama", "Kelas", "Absen", "Nilai Akademik", "Kategori"]], use_container_width=True)
+        # Filter & Search
+        col1, col2 = st.columns(2)
+        with col1:
+            cari = st.text_input("🔍 Cari Nama Siswa", placeholder="Ketik nama...")
+        with col2:
+            filter_kelas = st.selectbox("Filter Kelas", ["Semua"] + sorted(df["Kelas"].unique().tolist()))
+            
+        if cari:
+            df = df[df["Nama"].str.contains(cari, case=False)]
+        if filter_kelas != "Semua":
+            df = df[df["Kelas"] == filter_kelas]
+            
+        st.dataframe(df[["Nama", "Kelas", "Absen", "Nilai Akademik", "Kategori", "Dicatat Oleh"]], use_container_width=True, hide_index=True)
+        
+        # Download Excel
+        st.markdown("---")
+        st.markdown("### 📥 Download Data (Excel)")
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Data Siswa')
+        
+        st.download_button(
+            label="⬇️ Download Data Siswa (Excel)",
+            data=buffer.getvalue(),
+            file_name=f"Data_Siswa_{st.session_state.user_nama}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         
         with st.expander("🗑️ Zona Berbahaya"):
             if st.button("Hapus SEMUA Siswa Saya", type="primary"):
@@ -534,7 +586,7 @@ elif st.session_state.current_page == "monitoring":
                 st.rerun()
 
 # ================================================================
-# MODUL 03: FAKTOR PENGARUH
+# MODUL 03: FAKTOR PENGARUH (PLOTLY)
 # ================================================================
 elif st.session_state.current_page == "kausal":
     st.button("← Kembali", on_click=goto_page, args=("home",))
@@ -546,12 +598,9 @@ elif st.session_state.current_page == "kausal":
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
         st.stop()
         
-    # Hanya ambil siswa yang sudah mengisi kuesioner (Self-Efficacy > 0)
     df_siswa = df_all[df_all["Self-Efficacy"] > 0]
-    
     if df_siswa.empty:
         st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
-        st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
         st.stop()
 
     opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
@@ -587,15 +636,19 @@ elif st.session_state.current_page == "kausal":
         for k, v in kontribusi.items()
     ]).sort_values("Dampak (Poin)")
 
+    # Plotly Chart
     st.markdown("**Grafik Dampak Faktor (Poin)**")
-    st.bar_chart(df_k.set_index("Faktor")["Dampak (Poin)"], color="#6366f1")
-    st.caption("Batang positif (ke kanan) menaikkan nilai, batang negatif (ke kiri) menurunkan nilai.")
+    fig = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h',
+                 color="Dampak (Poin)", color_continuous_scale="RdBu",
+                 title="Semakin panjang batang, semakin besar pengaruhnya")
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=40, b=0))
+    st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("**Tabel Detail**")
     st.dataframe(df_k, use_container_width=True, hide_index=True)
 
 # ================================================================
-# MODUL 04: REKOMENDASI
+# MODUL 04: REKOMENDASI (WORD, PDF, & ZIP)
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
     st.button("← Kembali", on_click=goto_page, args=("home",))
@@ -607,12 +660,9 @@ elif st.session_state.current_page == "rekomendasi":
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
         st.stop()
         
-    # Hanya ambil siswa yang sudah mengisi kuesioner (Self-Efficacy > 0)
     df_siswa = df_all[df_all["Self-Efficacy"] > 0]
-    
     if df_siswa.empty:
         st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
-        st.info("Rekomendasi dan cetak laporan hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner.")
         st.stop()
 
     opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
@@ -906,56 +956,57 @@ elif st.session_state.current_page == "rekomendasi":
     st.write("Unduh laporan seluruh siswa Anda dalam satu file ZIP (format Word).")
     
     if st.button("📦 Buat File ZIP (Semua Siswa)", use_container_width=True):
-        try:
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                for _, row in df_siswa.iterrows():
-                    s_nama = row["Nama"]
-                    s_profil = {
-                        "Self-Efficacy Akademik": float(row["Self-Efficacy"]),
-                        "Keterlibatan Orang Tua": float(row["Keterlibatan Ortu"]),
-                        "Harapan Orang Tua": float(row["Harapan Ortu"]),
-                        "Dukungan Sekolah": float(row["Dukungan Sekolah"]),
-                        "Motivasi Belajar": float(row["Motivasi"]),
-                        "Kecemasan Akademik": float(row["Kecemasan"]),
-                        "Fasilitas Sekolah": float(row["Fasilitas"]),
-                        "Kemalasan Belajar": float(row["Kemalasan"]),
-                    }
-                    s_selisih, s_kontribusi = analisis_kausal(float(row["Nilai Akademik"]), s_profil)
-                    s_kat, _ = kategori_nilai(float(row["Nilai Akademik"]))
-                    
-                    s_df_k = pd.DataFrame([
-                        {"Aspek": k, "Kontribusi": v} for k, v in s_kontribusi.items()
-                    ]).sort_values("Kontribusi")
-                    s_neg = s_df_k[s_df_k["Kontribusi"] < -0.1]
-                    s_pos = s_df_k[s_df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
-                    
-                    s_data = {
-                        'nama': s_nama, 'kelas': row["Kelas"], 'absen': int(row["Absen"]),
-                        'nilai': float(row["Nilai Akademik"]), 'kategori': s_kat,
-                        'selisih': s_selisih, 
-                        'fp': s_pos.iloc[0] if len(s_pos) > 0 else None,
-                        'fn': s_neg.iloc[0] if len(s_neg) > 0 else None, 
-                        'tindak': TINDAK
-                    }
-                    
-                    file_buffer = buat_dokumen_word(s_data)
-                    nama_file = f"Laporan_{s_nama.replace(' ', '_')}.docx"
-                    zip_file.writestr(nama_file, file_buffer.getvalue())
-            
-            zip_buffer.seek(0)
-            st.success(f"Berhasil membuat ZIP berisi {len(df_siswa)} laporan Word!")
-            st.download_button(
-                label="⬇️ Download Semua Laporan (.zip)",
-                data=zip_buffer,
-                file_name="Semua_Laporan_Siswa.zip",
-                mime="application/zip"
-            )
-        except Exception as e:
-            st.error(f"Gagal membuat ZIP: {e}")
+        with st.spinner("Sedang menyiapkan file ZIP... Mohon tunggu sebentar."):
+            try:
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                    for _, row in df_siswa.iterrows():
+                        s_nama = row["Nama"]
+                        s_profil = {
+                            "Self-Efficacy Akademik": float(row["Self-Efficacy"]),
+                            "Keterlibatan Orang Tua": float(row["Keterlibatan Ortu"]),
+                            "Harapan Orang Tua": float(row["Harapan Ortu"]),
+                            "Dukungan Sekolah": float(row["Dukungan Sekolah"]),
+                            "Motivasi Belajar": float(row["Motivasi"]),
+                            "Kecemasan Akademik": float(row["Kecemasan"]),
+                            "Fasilitas Sekolah": float(row["Fasilitas"]),
+                            "Kemalasan Belajar": float(row["Kemalasan"]),
+                        }
+                        s_selisih, s_kontribusi = analisis_kausal(float(row["Nilai Akademik"]), s_profil)
+                        s_kat, _ = kategori_nilai(float(row["Nilai Akademik"]))
+                        
+                        s_df_k = pd.DataFrame([
+                            {"Aspek": k, "Kontribusi": v} for k, v in s_kontribusi.items()
+                        ]).sort_values("Kontribusi")
+                        s_neg = s_df_k[s_df_k["Kontribusi"] < -0.1]
+                        s_pos = s_df_k[s_df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
+                        
+                        s_data = {
+                            'nama': s_nama, 'kelas': row["Kelas"], 'absen': int(row["Absen"]),
+                            'nilai': float(row["Nilai Akademik"]), 'kategori': s_kat,
+                            'selisih': s_selisih, 
+                            'fp': s_pos.iloc[0] if len(s_pos) > 0 else None,
+                            'fn': s_neg.iloc[0] if len(s_neg) > 0 else None, 
+                            'tindak': TINDAK
+                        }
+                        
+                        file_buffer = buat_dokumen_word(s_data)
+                        nama_file = f"Laporan_{s_nama.replace(' ', '_')}.docx"
+                        zip_file.writestr(nama_file, file_buffer.getvalue())
+                
+                zip_buffer.seek(0)
+                st.success(f"Berhasil membuat ZIP berisi {len(df_siswa)} laporan Word!")
+                st.download_button(
+                    label="⬇️ Download Semua Laporan (.zip)",
+                    data=zip_buffer,
+                    file_name="Semua_Laporan_Siswa.zip",
+                    mime="application/zip"
+                )
+            except Exception as e:
+                st.error(f"Gagal membuat ZIP: {e}")
 
 # ================================================================
-# MODUL 05: PENGATURAN
+# MODUL 05: PENGATURAN (GANTI PASSWORD)
 # ================================================================
 elif st.session_state.current_page == "pengaturan":
     st.button("← Kembali", on_click=goto_page, args=("home",))
@@ -965,6 +1016,26 @@ elif st.session_state.current_page == "pengaturan":
     with c1:
         st.markdown("### Profil Anda")
         st.info(f"**Nama:** {st.session_state.user_nama}\n\n**Role:** {st.session_state.user_role.capitalize()}")
+        
+        # Ganti Password
+        with st.expander("🔒 Ubah Password"):
+            old_pw = st.text_input("Password Lama", type="password")
+            new_pw = st.text_input("Password Baru", type="password")
+            if st.button("Simpan Password Baru"):
+                users = load_users()
+                # Cari username berdasarkan nama (karena session hanya simpan nama)
+                curr_user = next((u for u, d in users.items() if d["nama"] == st.session_state.user_nama), None)
+                
+                if curr_user and verify_password(old_pw, users[curr_user]["password"]):
+                    if len(new_pw) >= 6:
+                        users[curr_user]["password"] = hash_password(new_pw)
+                        save_users(users)
+                        st.success("Password berhasil diubah!")
+                    else:
+                        st.error("Password baru minimal 6 karakter.")
+                else:
+                    st.error("Password lama salah.")
+
         if st.button("Logout dari Perangkat Ini"):
             add_log("Logout")
             st.session_state.logged_in = False
@@ -978,6 +1049,28 @@ elif st.session_state.current_page == "pengaturan":
             st.dataframe(df_log, use_container_width=True, hide_index=True)
         else:
             st.write("Belum ada aktivitas.")
+
+# ================================================================
+# MODUL 06: TENTANG SISTEM
+# ================================================================
+elif st.session_state.current_page == "tentang":
+    st.button("← Kembali", on_click=goto_page, args=("home",))
+    st.markdown("## ℹ️ Tentang Sistem")
+    
+    st.info("""
+    **Smart Academic Analytics (SAA)** adalah sistem pendukung keputusan berbasis data yang dirancang khusus untuk SMP Negeri 6 Salatiga.
+    
+    Sistem ini mengimplementasikan pendekatan **Hybrid Causal-Explainable Machine Learning** untuk menganalisis determinan (faktor penentu) prestasi akademik siswa.
+    
+    ### Komponen Utama:
+    1. **Pembentukan Konstruk (NLP)**: Mengelompokkan item kuesioner menjadi 8 konstruk utama menggunakan pendekatan semantik (Sentence-BERT).
+    2. **Causal Inference (DoWhy)**: Mengestimasi besarnya pengaruh sebab-akibat (Average Treatment Effect/ATE) dari setiap konstruk terhadap nilai siswa.
+    3. **Machine Learning (Random Forest)**: Memprediksi nilai siswa dan mengekstraksi tingkat kepentingan fitur (Feature Importance).
+    4. **Explainable AI (SHAP)**: Menjelaskan seberapa besar kontribusi setiap faktor terhadap prediksi model.
+    5. **Composite Effect Index (CEI)**: Menggabungkan hasil analisis kausal (ATE) dan prediktif (SHAP) untuk menghasilkan rekomendasi prioritas intervensi yang komprehensif bagi guru dan sekolah.
+    
+    *Sistem ini dikembangkan sebagai luaran terapan dari Tesis Program Studi Magister Sains Data, Universitas Kristen Satya Wacana.*
+    """)
 
 # ================================================================
 # END OF FILE

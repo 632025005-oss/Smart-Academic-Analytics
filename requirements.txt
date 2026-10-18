@@ -10,3 +10,4 @@ toml>=0.10.2
 certifi>=2024.0.0
 python-docx-ng
 fpdf2
+plotly

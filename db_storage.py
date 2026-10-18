@@ -138,3 +138,21 @@ def tambah_log(entry):
 def hapus_semua_siswa_admin():
     """Menghapus SELURUH data siswa dari semua guru (Khusus Admin)."""
     return _db().siswa.delete_many({}).deleted_count
+
+def cek_status_kuesioner(nama, kelas, absen):
+    """Mengecek apakah siswa sudah mengisi kuesioner atau belum."""
+    siswa = _db().siswa.find_one({
+        "Nama": {"$regex": f"^{nama.strip()}$", "$options": "i"},
+        "Kelas": kelas,
+        "Absen": int(absen)
+    })
+    if siswa:
+        if siswa.get("Self-Efficacy", 0) > 0:
+            return True, siswa.get("Timestamp", "Waktu tidak diketahui")
+        else:
+            return False, "Belum mengisi (Guru sudah input nilai, tapi kuesioner kosong)."
+    return False, "Data tidak ditemukan. Pastikan Nama, Kelas, dan Absen benar."
+
+def update_user_password(username, new_hashed_pw):
+    """Mengubah password user di database."""
+    _db().users.update_one({"_id": username}, {"$set": {"password": new_hashed_pw}})
