@@ -2,7 +2,7 @@
 # ================================================================
 # SMART ACADEMIC ANALYTICS (SAA) - SMP Negeri 6 Salatiga
 # Sub-brand: SIA.Prestasi - Magister Sains Data UKSW
-# MongoDB Edition - Data tersimpan di MongoDB Atlas
+# MongoDB Edition + Bulk Upload Excel + Bahasa Awam
 # ================================================================
 
 import streamlit as st
@@ -12,9 +12,12 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import hashlib
 import json
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 # ================================================================
-# MONGODB STORAGE (Ganti sistem JSON)
+# MONGODB STORAGE
 # ================================================================
 from db_storage import (
     load_users as _db_load_users,
@@ -23,6 +26,7 @@ from db_storage import (
     load_config, save_config,
     load_log, save_log, tambah_log,
     ambil_semua_hasil, hapus_hasil,
+    insert_siswa, hapus_semua_siswa
 )
 
 SUPER_ADMIN = {"admin", "regina"}
@@ -31,7 +35,6 @@ SUPER_ADMIN = {"admin", "regina"}
 # HELPER: SECRETS & PASSWORD
 # ================================================================
 def get_secret(section, key=None, default=None):
-    """Ambil nilai dari st.secrets dengan aman."""
     try:
         if key is None:
             return st.secrets[section]
@@ -43,19 +46,14 @@ def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 def verify_password(p, hashed):
-    """Cek password cocok dengan hash yang tersimpan."""
     return hash_password(p) == hashed
 
 def load_users():
-    """Load user dari MongoDB. Kalau kosong, inisialisasi dari secrets."""
     users = _db_load_users()
     if not users:
         super_admins = get_secret("super_admin", None, {})
         if not super_admins:
-            raise RuntimeError(
-                "❌ Kredensial super admin tidak ditemukan.\n"
-                "Isi [super_admin.admin] dan [super_admin.regina] di secrets.toml"
-            )
+            raise RuntimeError("❌ Kredensial super admin tidak ditemukan di secrets.")
         users = {}
         for username, info in super_admins.items():
             users[username] = {
@@ -84,7 +82,7 @@ st.set_page_config(
 )
 
 # ================================================================
-# CSS
+# CSS (Tampilan UI)
 # ================================================================
 st.markdown("""
 <style>
@@ -350,7 +348,7 @@ def reload_users():
     st.session_state.users = load_users()
 
 # ================================================================
-# DATA 8 FAKTOR — Baseline dari Tabel 4.2 thesis
+# DATA 8 FAKTOR
 # ================================================================
 BASELINE_ASPEK = {
     "Self-Efficacy Akademik": 4.634,
@@ -685,7 +683,7 @@ def form_profil_siswa(prefix, default_nama="", default_kelas="IX-A", default_abs
     return nama, kelas, absen, nilai, profil
 
 # ================================================================
-# HALAMAN LOGIN + REGISTRASI
+# HALAMAN LOGIN
 # ================================================================
 def halaman_login():
     st.markdown(
@@ -743,7 +741,7 @@ def halaman_login():
                         if u.get("status") == "pending":
                             st.warning("Akun Anda belum disetujui. Silakan hubungi Administrator sekolah.")
                         elif u.get("status") == "rejected":
-                            st.error("Akun Anda ditolak. Silakan hubungi Administrator untuk informasi lebih lanjut.")
+                            st.error("Akun Anda ditolak. Silakan hubungi Administrator.")
                         else:
                             st.session_state.logged_in = True
                             st.session_state.user_nama = u["nama"]
@@ -758,7 +756,7 @@ def halaman_login():
                     st.error("Nama pengguna tidak terdaftar. Silakan daftar terlebih dahulu.")
 
             if lupa:
-                st.info("Hubungi Administrator sekolah untuk reset password. Email: admin@smpn6salatiga.sch.id")
+                st.info("Hubungi Administrator sekolah untuk reset password.")
 
     with tab_daftar:
         st.markdown(
@@ -820,35 +818,10 @@ def halaman_login():
                     save_users(users)
                     reload_users()
                     st.success(
-                        f"Pendaftaran berhasil, {reg_nama}. Akun Anda akan ditinjau oleh Administrator "
-                        "sebelum bisa digunakan. Silakan hubungi Administrator untuk mempercepat proses."
+                        f"Pendaftaran berhasil, {reg_nama}. Akun Anda akan ditinjau oleh Administrator."
                     )
 
-    st.markdown(
-        '<div class="siasat-info-box">'
-        '<div class="siasat-info-header">'
-        '<div class="siasat-info-icon">💡</div>'
-        '<div class="siasat-info-title">Informasi</div>'
-        '</div>'
-        '<div class="siasat-info-list">'
-        '<div><span class="num">1.</span><span>Guru dapat mendaftar akun sendiri melalui tab "Daftar Akun Baru".</span></div>'
-        '<div><span class="num">2.</span><span>Akun yang sudah didaftarkan akan ditinjau oleh Administrator.</span></div>'
-        '<div><span class="num">3.</span><span>Setiap akun memiliki hak akses berbeda sesuai peran.</span></div>'
-        '<div><span class="num">4.</span><span>Jangan bagikan akun kepada orang lain.</span></div>'
-        '<div><span class="num">5.</span><span>Logout setelah selesai menggunakan dashboard.</span></div>'
-        '</div></div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="siasat-footer">'
-        '<strong>Smart Academic Analytics (SAA)</strong> - Sub-brand: SIA.Prestasi<br>'
-        'Program Studi Magister Sains Data - Universitas Kristen Satya Wacana - 2026'
-        '</div>',
-        unsafe_allow_html=True,
-    )
     st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ================================================================
 # ROUTING UTAMA
@@ -897,7 +870,7 @@ if st.session_state.current_page == "home":
         ("MODUL 02", "Prediksi Prestasi", "Prediksi nilai dan potensi maksimal siswa.", "mc-purple", "📈", "prediksi"),
         ("MODUL 03", "Faktor Pengaruh", "Faktor apa yang mempengaruhi prestasi siswa.", "mc-mint", "🔬", "kausal"),
         ("MODUL 04", "Rekomendasi", "Rekomendasi intervensi tingkat sekolah dan personal.", "mc-pink", "💡", "rekomendasi"),
-        ("MODUL 05", "Monitoring & Data", "Pantau kelas, download data, dan kelola data siswa.", "mc-yellow", "📊", "monitoring"),
+        ("MODUL 05", "Monitoring & Data", "Pantau kelas, download data, dan upload massal.", "mc-yellow", "📊", "monitoring"),
         ("MODUL 06", "Pengaturan", "Manajemen akun, konfigurasi, dan log aktivitas.", "mc-teal", "⚙️", "pengaturan"),
     ]
 
@@ -1066,7 +1039,7 @@ elif st.session_state.current_page == "analisis":
                     "Dicatat Oleh": st.session_state.user_nama,
                 }
                 st.session_state.database_siswa.append(data)
-                save_database(st.session_state.database_siswa)
+                insert_siswa(data) # Menggunakan fungsi insert MongoDB
                 add_log("Input siswa", f"{nama} ({kelas})")
                 st.session_state.last_saved = {"nama": nama, "kelas": kelas, "absen": absen}
                 st.rerun()
@@ -1209,33 +1182,32 @@ elif st.session_state.current_page == "prediksi":
         )
 
 # ================================================================
-# MODUL 03 - FAKTOR PENGARUH
+# MODUL 03 - FAKTOR PENGARUH (BAHASA DIRUBAH)
 # ================================================================
 elif st.session_state.current_page == "kausal":
     top_bar("Faktor Pengaruh", "Modul 03 - Faktor yang mempengaruhi prestasi")
 
     hero_header(
         "MODUL 03 - FAKTOR PENGARUH",
-        "Faktor apa yang<br><span class='accent'>paling berpengaruh?</span>",
-        "Temukan faktor-faktor yang benar-benar mempengaruhi prestasi siswa, serta faktor yang "
-        "paling menentukan dalam memprediksi nilai.",
-        [("8 FAKTOR", "blue"), ("SEBAB-AKIBAT", "mint"), ("PREDIKSI", "purple")],
+        "Apa yang membuat<br><span class='accent'>nilai siswa naik?</span>",
+        "Temukan faktor-faktor yang jika diperbaiki bisa menaikkan nilai siswa, serta faktor apa saja "
+        "yang paling sering dipakai sistem untuk memprediksi nilai.",
+        [("8 FAKTOR", "blue"), ("DAMPAK POIN", "mint"), ("PRIORITAS", "purple")],
     )
 
-    section_header("01", "Dua Jenis Pengaruh", "PENGARUH VS PREDIKSI")
+    section_header("01", "Memahami Dua Jenis Pengaruh", "DAMPAK VS PRIORITAS")
     st.markdown(
         '<div class="info-box blue" style="margin-bottom:1rem;">'
-        '<div class="info-title">Kenapa ada dua jenis pengaruh?</div>'
+        '<div class="info-title">Kenapa ada dua grafik yang berbeda?</div>'
         '<div class="info-text">'
-        '<b>Pengaruh sebab-akibat</b>: Jika faktor ini diperbaiki, apakah nilai siswa benar-benar naik?<br>'
-        '<b>Tingkat kepentingan prediksi</b>: Seberapa sering faktor ini dipakai untuk memperkirakan nilai siswa?'
-        '<br><br>Keduanya bisa berbeda. Faktor yang sering dipakai untuk prediksi belum tentu bisa '
-        'diperbaiki untuk menaikkan nilai.'
+        '<b>1. Dampak Sebab-Akibat (Poin):</b> Jika sekolah/guru memperbaiki faktor ini, apakah nilai siswa benar-benar naik? (Contoh: Efikasi diri tinggi bisa menaikkan 2 poin).<br><br>'
+        '<b>2. Tingkat Kepentingan Prediksi:</b> Seberapa sering sistem komputer menggunakan faktor ini untuk menebak nilai siswa?<br><br>'
+        'Keduanya bisa berbeda. Sebuah faktor bisa sangat penting untuk memprediksi, tapi belum tentu bisa diperbaiki untuk menaikkan nilai.'
         '</div></div>',
         unsafe_allow_html=True,
     )
 
-    tab_pengaruh, tab_kepentingan = st.tabs(["Pengaruh Sebab-Akibat", "Tingkat Kepentingan Prediksi"])
+    tab_pengaruh, tab_kepentingan = st.tabs(["Dampak Sebab-Akibat (Poin)", "Tingkat Kepentingan Prediksi"])
 
     with tab_pengaruh:
         df_ate = pd.DataFrame([{"Faktor": k, "Pengaruh": v} for k, v in PENGARUH_DATA.items()])
@@ -1279,9 +1251,9 @@ elif st.session_state.current_page == "kausal":
 
         a, b_, c = st.columns(3)
         with a:
-            stat_card("Faktor #1", ranked.iloc[0]["Faktor"], "paling menentukan prediksi", "purple")
+            stat_card("Paling Berpengaruh #1", ranked.iloc[0]["Faktor"], "paling menentukan prediksi", "purple")
         with b_:
-            stat_card("Faktor #2", ranked.iloc[1]["Faktor"], "cukup menentukan prediksi", "blue")
+            stat_card("Paling Berpengaruh #2", ranked.iloc[1]["Faktor"], "cukup menentukan prediksi", "blue")
         with c:
             stat_card("Jumlah faktor", "8", "faktor dianalisis", "yellow")
 
@@ -1310,12 +1282,11 @@ elif st.session_state.current_page == "kausal":
 
     with st.expander("Penjelasan tambahan untuk guru"):
         st.markdown(
-            "**Pengaruh sebab-akibat** menunjukkan apakah faktor tersebut benar-benar bisa mengubah nilai "
+            "**Dampak Sebab-Akibat** menunjukkan apakah faktor tersebut benar-benar bisa mengubah nilai "
             "siswa jika diperbaiki. Misalnya: siswa yang lebih percaya diri cenderung mendapat nilai lebih baik.\n\n"
-            "**Tingkat kepentingan prediksi** menunjukkan seberapa sering faktor tersebut dipakai untuk "
-            "memperkirakan nilai siswa. Faktor dengan tingkat kepentingan tinggi berarti sangat membantu "
-            "memahami kondisi siswa.\n\n"
-            "**Catatan**: Gunakan hasil pengaruh sebab-akibat untuk memutuskan apa yang perlu diperbaiki. "
+            "**Tingkat Kepentingan Prediksi** menunjukkan seberapa sering faktor tersebut dipakai oleh sistem "
+            "untuk memperkirakan nilai siswa.\n\n"
+            "**Catatan**: Gunakan hasil dampak sebab-akibat untuk memutuskan apa yang perlu diperbaiki. "
             "Gunakan tingkat kepentingan untuk memahami faktor mana yang paling sering dipertimbangkan."
         )
 
@@ -1582,312 +1553,430 @@ elif st.session_state.current_page == "rekomendasi":
             )
 
 # ================================================================
-# MODUL 05 - MONITORING KELAS & KELOLA DATA
+# MODUL 05 - MONITORING KELAS & KELOLA DATA (TAMBAH BULK UPLOAD)
 # ================================================================
 elif st.session_state.current_page == "monitoring":
-    top_bar("Monitoring & Data", "Modul 05 - Pantau kelas, download, dan kelola data")
+    top_bar("Monitoring & Data", "Modul 05 - Pantau kelas, download, dan upload massal")
 
     hero_header(
         "MODUL 05 - MONITORING & DATA",
         "Pantau kelas.<br><span class='accent'>Kelola data.</span>",
-        "Monitoring agregat per kelas, download data siswa, dan kelola data yang sudah diinput.",
-        [("PER KELAS", "yellow"), ("DOWNLOAD", "mint"), ("KELOLA", "coral")],
+        "Monitoring agregat per kelas, download data siswa, upload massal dari Excel, dan kelola data.",
+        [("PER KELAS", "yellow"), ("DOWNLOAD", "mint"), ("UPLOAD EXCEL", "blue")],
     )
 
-    if len(st.session_state.database_siswa) == 0:
-        st.warning("Data siswa masih kosong. Input terlebih dahulu di Modul 01.")
+    if len(st.session_state.database_siswa) == 0 and st.session_state.current_page != "monitoring":
+        st.warning("Data siswa masih kosong. Silakan input atau upload.")
         st.stop()
 
-    df_db = pd.DataFrame(st.session_state.database_siswa)
+    df_db = pd.DataFrame(st.session_state.database_siswa) if len(st.session_state.database_siswa) > 0 else pd.DataFrame()
 
-    if st.session_state.user_role == "wali_kelas" and st.session_state.user_kelas:
+    if st.session_state.user_role == "wali_kelas" and st.session_state.user_kelas and not df_db.empty:
         df_db = df_db[df_db["Kelas"].isin(st.session_state.user_kelas)]
         st.info(f"Anda login sebagai Wali Kelas. Data hanya untuk kelas: {', '.join(st.session_state.user_kelas)}")
 
-    tab_monitoring, tab_early, tab_kelola, tab_download = st.tabs([
-        "📊 Monitoring Kelas", "⚠️ Early Warning", "🗑️ Kelola Data Siswa", "📥 Download Data"
+    tab_monitoring, tab_early, tab_kelola, tab_download, tab_bulk = st.tabs([
+        "📊 Monitoring Kelas", "⚠️ Early Warning", "🗑️ Kelola Data Siswa", "📥 Download Data", "📤 Upload Bulk Excel"
     ])
 
     with tab_monitoring:
-        section_header("01", "Ringkasan Sekolah", "STATISTIK AGREGAT")
-        a, b_, c, d = st.columns(4)
-        with a:
-            stat_card("Total Siswa", len(df_db), "siswa terarsip", "blue")
-        with b_:
-            stat_card("Rata-rata", f"{df_db['Nilai Akademik'].mean():.2f}", "nilai seluruh siswa", "mint")
-        with c:
-            stat_card("Tertinggi", f"{df_db['Nilai Akademik'].max():.2f}", "nilai maksimum", "yellow")
-        with d:
-            stat_card("Terendah", f"{df_db['Nilai Akademik'].min():.2f}", "nilai minimum", "coral")
+        if df_db.empty:
+            st.info("Belum ada data siswa untuk dimonitoring.")
+        else:
+            section_header("01", "Ringkasan Sekolah", "STATISTIK AGREGAT")
+            a, b_, c, d = st.columns(4)
+            with a:
+                stat_card("Total Siswa", len(df_db), "siswa terarsip", "blue")
+            with b_:
+                stat_card("Rata-rata", f"{df_db['Nilai Akademik'].mean():.2f}", "nilai seluruh siswa", "mint")
+            with c:
+                stat_card("Tertinggi", f"{df_db['Nilai Akademik'].max():.2f}", "nilai maksimum", "yellow")
+            with d:
+                stat_card("Terendah", f"{df_db['Nilai Akademik'].min():.2f}", "nilai minimum", "coral")
 
-        section_header("02", "Distribusi Kategori Nilai", "SEBARAN SELURUH SISWA")
-        dist = df_db["Kategori"].value_counts().to_dict()
-        kategori_list = ["Sangat Baik", "Baik", "Cukup", "Perlu Perhatian"]
-        warna_map = {
-            "Sangat Baik": "#10B981", "Baik": "#2563EB",
-            "Cukup": "#F0B900", "Perlu Perhatian": "#EF5B67",
-        }
-        cols = st.columns(4)
-        for i, kat in enumerate(kategori_list):
-            jml = dist.get(kat, 0)
-            pct = jml / len(df_db) * 100 if len(df_db) > 0 else 0
-            with cols[i]:
-                st.markdown(
-                    f'<div class="card stat-card" style="border-left:5px solid {warna_map[kat]};">'
-                    f'<div class="card-label" style="color:{warna_map[kat]};">{kat.upper()}</div>'
-                    f'<div class="card-value" style="color:{warna_map[kat]};">{jml}</div>'
-                    f'<div class="card-note">{pct:.1f}% dari {len(df_db)} siswa</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+            section_header("02", "Distribusi Kategori Nilai", "SEBARAN SELURUH SISWA")
+            dist = df_db["Kategori"].value_counts().to_dict()
+            kategori_list = ["Sangat Baik", "Baik", "Cukup", "Perlu Perhatian"]
+            warna_map = {
+                "Sangat Baik": "#10B981", "Baik": "#2563EB",
+                "Cukup": "#F0B900", "Perlu Perhatian": "#EF5B67",
+            }
+            cols = st.columns(4)
+            for i, kat in enumerate(kategori_list):
+                jml = dist.get(kat, 0)
+                pct = jml / len(df_db) * 100 if len(df_db) > 0 else 0
+                with cols[i]:
+                    st.markdown(
+                        f'<div class="card stat-card" style="border-left:5px solid {warna_map[kat]};">'
+                        f'<div class="card-label" style="color:{warna_map[kat]};">{kat.upper()}</div>'
+                        f'<div class="card-value" style="color:{warna_map[kat]};">{jml}</div>'
+                        f'<div class="card-note">{pct:.1f}% dari {len(df_db)} siswa</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
 
-        section_header("03", "Perbandingan Antar Kelas", "RATA-RATA PER KELAS")
-        per_kelas = df_db.groupby("Kelas").agg(
-            Jumlah=("Nama", "count"),
-            Rata2=("Nilai Akademik", "mean"),
-            Tertinggi=("Nilai Akademik", "max"),
-            Terendah=("Nilai Akademik", "min"),
-        ).reset_index().sort_values("Rata2", ascending=False)
-        per_kelas["Rata2"] = per_kelas["Rata2"].round(2)
-        per_kelas["Tertinggi"] = per_kelas["Tertinggi"].round(2)
-        per_kelas["Terendah"] = per_kelas["Terendah"].round(2)
+            section_header("03", "Perbandingan Antar Kelas", "RATA-RATA PER KELAS")
+            per_kelas = df_db.groupby("Kelas").agg(
+                Jumlah=("Nama", "count"),
+                Rata2=("Nilai Akademik", "mean"),
+                Tertinggi=("Nilai Akademik", "max"),
+                Terendah=("Nilai Akademik", "min"),
+            ).reset_index().sort_values("Rata2", ascending=False)
+            per_kelas["Rata2"] = per_kelas["Rata2"].round(2)
+            per_kelas["Tertinggi"] = per_kelas["Tertinggi"].round(2)
+            per_kelas["Terendah"] = per_kelas["Terendah"].round(2)
 
-        fig, ax = plt.subplots(figsize=(11, max(4, len(per_kelas) * 0.42)))
-        fig.patch.set_alpha(0)
-        ax.set_facecolor("none")
-        colors = ["#10B981" if x >= RATA_RATA_NILAI else "#EF5B67" for x in per_kelas["Rata2"]]
-        bars = ax.barh(per_kelas["Kelas"], per_kelas["Rata2"], color=colors, alpha=.85)
-        ax.axvline(RATA_RATA_NILAI, color="#2563EB", linestyle="--", alpha=.6, linewidth=1.5)
-        for bar, val in zip(bars, per_kelas["Rata2"]):
-            ax.text(val + 0.15, bar.get_y() + bar.get_height() / 2, f"{val:.2f}",
-                    va="center", fontsize=9.5, fontweight="bold")
-        ax.set_xlim(70, 100)
-        ax.tick_params(axis="y", length=0)
-        ax.grid(axis="x", alpha=.15)
-        ax.set_axisbelow(True)
-        for s in ["top", "right", "left"]:
-            ax.spines[s].set_visible(False)
-        ax.spines["bottom"].set_color("#D8E0EB")
-        ax.set_xlabel(f"Rata-rata nilai (garis biru = rata-rata sekolah {RATA_RATA_NILAI:.2f})",
-                      fontsize=9.5, color="#5C6B85", labelpad=8)
-        plt.tight_layout()
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
-
-        st.dataframe(per_kelas, use_container_width=True, hide_index=True)
-
-        section_header("04", "Distribusi Nilai Per Kelas", "SEBARAN")
-        kelas_pilih = st.selectbox("Pilih Kelas",
-                                   sorted(df_db["Kelas"].unique().tolist()), key="mon_kelas")
-        df_k = df_db[df_db["Kelas"] == kelas_pilih]
-        if len(df_k) > 0:
-            fig, ax = plt.subplots(figsize=(11, 4))
+            fig, ax = plt.subplots(figsize=(11, max(4, len(per_kelas) * 0.42)))
             fig.patch.set_alpha(0)
             ax.set_facecolor("none")
-            ax.hist(df_k["Nilai Akademik"], bins=10, color="#2563EB", alpha=.7, edgecolor="white")
-            ax.axvline(df_k["Nilai Akademik"].mean(), color="#EF5B67", linestyle="--", linewidth=2,
-                       label=f"Rata-rata kelas: {df_k['Nilai Akademik'].mean():.2f}")
-            ax.axvline(RATA_RATA_NILAI, color="#10B981", linestyle=":", linewidth=2,
-                       label=f"Rata-rata sekolah: {RATA_RATA_NILAI:.2f}")
-            ax.legend(fontsize=9)
-            ax.grid(axis="y", alpha=.15)
+            colors = ["#10B981" if x >= RATA_RATA_NILAI else "#EF5B67" for x in per_kelas["Rata2"]]
+            bars = ax.barh(per_kelas["Kelas"], per_kelas["Rata2"], color=colors, alpha=.85)
+            ax.axvline(RATA_RATA_NILAI, color="#2563EB", linestyle="--", alpha=.6, linewidth=1.5)
+            for bar, val in zip(bars, per_kelas["Rata2"]):
+                ax.text(val + 0.15, bar.get_y() + bar.get_height() / 2, f"{val:.2f}",
+                        va="center", fontsize=9.5, fontweight="bold")
+            ax.set_xlim(70, 100)
+            ax.tick_params(axis="y", length=0)
+            ax.grid(axis="x", alpha=.15)
             ax.set_axisbelow(True)
             for s in ["top", "right", "left"]:
                 ax.spines[s].set_visible(False)
             ax.spines["bottom"].set_color("#D8E0EB")
-            ax.set_xlabel("Nilai Akademik", fontsize=9.5, color="#5C6B85")
-            ax.set_ylabel("Jumlah Siswa", fontsize=9.5, color="#5C6B85")
+            ax.set_xlabel(f"Rata-rata nilai (garis biru = rata-rata sekolah {RATA_RATA_NILAI:.2f})",
+                          fontsize=9.5, color="#5C6B85", labelpad=8)
             plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
 
+            st.dataframe(per_kelas, use_container_width=True, hide_index=True)
+
+            section_header("04", "Distribusi Nilai Per Kelas", "SEBARAN")
+            kelas_pilih = st.selectbox("Pilih Kelas",
+                                       sorted(df_db["Kelas"].unique().tolist()), key="mon_kelas")
+            df_k = df_db[df_db["Kelas"] == kelas_pilih]
+            if len(df_k) > 0:
+                fig, ax = plt.subplots(figsize=(11, 4))
+                fig.patch.set_alpha(0)
+                ax.set_facecolor("none")
+                ax.hist(df_k["Nilai Akademik"], bins=10, color="#2563EB", alpha=.7, edgecolor="white")
+                ax.axvline(df_k["Nilai Akademik"].mean(), color="#EF5B67", linestyle="--", linewidth=2,
+                           label=f"Rata-rata kelas: {df_k['Nilai Akademik'].mean():.2f}")
+                ax.axvline(RATA_RATA_NILAI, color="#10B981", linestyle=":", linewidth=2,
+                           label=f"Rata-rata sekolah: {RATA_RATA_NILAI:.2f}")
+                ax.legend(fontsize=9)
+                ax.grid(axis="y", alpha=.15)
+                ax.set_axisbelow(True)
+                for s in ["top", "right", "left"]:
+                    ax.spines[s].set_visible(False)
+                ax.spines["bottom"].set_color("#D8E0EB")
+                ax.set_xlabel("Nilai Akademik", fontsize=9.5, color="#5C6B85")
+                ax.set_ylabel("Jumlah Siswa", fontsize=9.5, color="#5C6B85")
+                plt.tight_layout()
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
+
     with tab_early:
-        section_header("01", "Early Warning", "SISWA YANG PERLU PERHATIAN")
-        st.markdown(
-            '<div class="info-box coral" style="margin-bottom:1rem;">'
-            '<div class="info-title">Kriteria</div>'
-            '<div class="info-text">Siswa dengan nilai di bawah rata-rata sekolah lebih dari 1 standar deviasi.</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-        df_perhatian = df_db[df_db["Nilai Akademik"] < RATA_RATA_NILAI - STD_NILAI].copy()
-        df_perhatian = df_perhatian.sort_values("Nilai Akademik")
-
-        if len(df_perhatian) == 0:
-            st.success("Tidak ada siswa yang memerlukan perhatian khusus saat ini.")
+        if df_db.empty:
+            st.info("Belum ada data siswa.")
         else:
-            st.markdown(f"**{len(df_perhatian)} siswa** memerlukan perhatian:")
-            tabel_warn = df_perhatian[["Nama", "Kelas", "Absen", "Nilai Akademik",
-                                       "Kategori", "Dicatat Oleh"]].copy()
-            tabel_warn.columns = ["Nama", "Kelas", "Absen", "Nilai", "Kategori", "Dicatat Oleh"]
-            st.dataframe(tabel_warn, use_container_width=True, hide_index=True)
-
-            csv = tabel_warn.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "Download Daftar Early Warning (CSV)", data=csv,
-                file_name=f"early_warning_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv", use_container_width=True,
-            )
-
-    with tab_kelola:
-        section_header("01", "Kelola Data Siswa", "HAPUS SATU PER SATU ATAU SEMUA")
-
-        st.markdown(
-            '<div class="info-box coral" style="margin-bottom:1rem;">'
-            '<div class="info-title">Perhatian</div>'
-            '<div class="info-text">Data yang dihapus tidak bisa dikembalikan. '
-            'Pastikan Anda sudah mendownload backup terlebih dahulu di tab <b>Download Data</b>.</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-        df_full = pd.DataFrame(st.session_state.database_siswa)
-
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            filter_hapus_kelas = st.selectbox(
-                "Filter Kelas", ["Semua"] + sorted(df_full["Kelas"].unique().tolist()),
-                key="kelola_filter",
-            )
-        with col2:
-            cari_hapus = st.text_input("Cari nama", placeholder="Ketik nama siswa...",
-                                       key="kelola_cari")
-
-        df_hapus = df_full.copy()
-        if filter_hapus_kelas != "Semua":
-            df_hapus = df_hapus[df_hapus["Kelas"] == filter_hapus_kelas]
-        if cari_hapus:
-            df_hapus = df_hapus[df_hapus["Nama"].str.contains(cari_hapus, case=False, na=False)]
-
-        st.markdown(f"**{len(df_hapus)} siswa** ditemukan")
-        df_hapus_display = df_hapus[["Nama", "Kelas", "Absen", "Nilai Akademik", "Kategori", "Dicatat Oleh"]].copy()
-        df_hapus_display.columns = ["Nama", "Kelas", "Absen", "Nilai", "Kategori", "Dicatat Oleh"]
-        st.dataframe(df_hapus_display, use_container_width=True, hide_index=True)
-
-        st.markdown("---")
-        st.markdown("**Hapus satu siswa:**")
-
-        if len(df_hapus) == 0:
-            st.info("Tidak ada siswa yang cocok dengan filter.")
-        else:
-            df_hapus_reset = df_hapus.reset_index(drop=True)
-            opsi_hapus = df_hapus_reset.apply(
-                lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']}) - Nilai {x['Nilai Akademik']:.2f}",
-                axis=1
-            ).tolist()
-            siswa_dipilih = st.selectbox("Pilih siswa yang akan dihapus", opsi_hapus,
-                                         key="kelola_pilih")
-
-            idx_hapus_local = opsi_hapus.index(siswa_dipilih)
-            row_hapus = df_hapus_reset.iloc[idx_hapus_local]
-
+            section_header("01", "Early Warning", "SISWA YANG PERLU PERHATIAN")
             st.markdown(
-                f'<div class="card" style="border-left:5px solid #EF5B67;margin-top:.8rem;">'
-                f'<div class="card-label">SISWA YANG AKAN DIHAPUS</div>'
-                f'<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-top:.5rem;">'
-                f'{row_hapus["Nama"]}</div>'
-                f'<div style="font-size:.75rem;color:#5C6B85;margin-top:.3rem;">'
-                f'{row_hapus["Kelas"]} - Absen {int(row_hapus["Absen"]):02d} - Nilai {row_hapus["Nilai Akademik"]:.2f}'
-                f'</div></div>',
+                '<div class="info-box coral" style="margin-bottom:1rem;">'
+                '<div class="info-title">Kriteria</div>'
+                '<div class="info-text">Siswa dengan nilai di bawah rata-rata sekolah lebih dari 1 standar deviasi.</div>'
+                '</div>',
                 unsafe_allow_html=True,
             )
 
-            konfirmasi_hapus = st.checkbox(
-                f"Saya yakin ingin menghapus data ini",
-                key="kelola_konfirmasi"
+            df_perhatian = df_db[df_db["Nilai Akademik"] < RATA_RATA_NILAI - STD_NILAI].copy()
+            df_perhatian = df_perhatian.sort_values("Nilai Akademik")
+
+            if len(df_perhatian) == 0:
+                st.success("Tidak ada siswa yang memerlukan perhatian khusus saat ini.")
+            else:
+                st.markdown(f"**{len(df_perhatian)} siswa** memerlukan perhatian:")
+                tabel_warn = df_perhatian[["Nama", "Kelas", "Absen", "Nilai Akademik",
+                                           "Kategori", "Dicatat Oleh"]].copy()
+                tabel_warn.columns = ["Nama", "Kelas", "Absen", "Nilai", "Kategori", "Dicatat Oleh"]
+                st.dataframe(tabel_warn, use_container_width=True, hide_index=True)
+
+                csv = tabel_warn.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download Daftar Early Warning (CSV)", data=csv,
+                    file_name=f"early_warning_{datetime.now().strftime('%Y%m%d')}.csv",
+                    mime="text/csv", use_container_width=True,
+                )
+
+    with tab_kelola:
+        if df_db.empty:
+            st.info("Belum ada data siswa.")
+        else:
+            section_header("01", "Kelola Data Siswa", "HAPUS SATU PER SATU ATAU SEMUA")
+
+            st.markdown(
+                '<div class="info-box coral" style="margin-bottom:1rem;">'
+                '<div class="info-title">Perhatian</div>'
+                '<div class="info-text">Data yang dihapus tidak bisa dikembalikan. '
+                'Pastikan Anda sudah mendownload backup terlebih dahulu di tab <b>Download Data</b>.</div>'
+                '</div>',
+                unsafe_allow_html=True,
             )
 
-            col_a, col_b = st.columns([1, 1])
-            with col_a:
-                if st.button("Hapus Siswa Ini", use_container_width=True,
-                             type="primary", disabled=not konfirmasi_hapus, key="btn_hapus_satu"):
-                    nama_hapus = row_hapus["Nama"]
-                    kelas_hapus = row_hapus["Kelas"]
-                    absen_hapus = int(row_hapus["Absen"])
-                    for i, s in enumerate(st.session_state.database_siswa):
-                        if (s["Nama"] == nama_hapus and s["Kelas"] == kelas_hapus
-                                and int(s["Absen"]) == absen_hapus):
-                            st.session_state.database_siswa.pop(i)
-                            break
-                    save_database(st.session_state.database_siswa)
-                    add_log("Hapus siswa", f"{nama_hapus} ({kelas_hapus})")
-                    st.success(f"Data siswa {nama_hapus} berhasil dihapus.")
+            df_full = pd.DataFrame(st.session_state.database_siswa)
+
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                filter_hapus_kelas = st.selectbox(
+                    "Filter Kelas", ["Semua"] + sorted(df_full["Kelas"].unique().tolist()),
+                    key="kelola_filter",
+                )
+            with col2:
+                cari_hapus = st.text_input("Cari nama", placeholder="Ketik nama siswa...",
+                                           key="kelola_cari")
+
+            df_hapus = df_full.copy()
+            if filter_hapus_kelas != "Semua":
+                df_hapus = df_hapus[df_hapus["Kelas"] == filter_hapus_kelas]
+            if cari_hapus:
+                df_hapus = df_hapus[df_hapus["Nama"].str.contains(cari_hapus, case=False, na=False)]
+
+            st.markdown(f"**{len(df_hapus)} siswa** ditemukan")
+            df_hapus_display = df_hapus[["Nama", "Kelas", "Absen", "Nilai Akademik", "Kategori", "Dicatat Oleh"]].copy()
+            df_hapus_display.columns = ["Nama", "Kelas", "Absen", "Nilai", "Kategori", "Dicatat Oleh"]
+            st.dataframe(df_hapus_display, use_container_width=True, hide_index=True)
+
+            st.markdown("---")
+            st.markdown("**Hapus satu siswa:**")
+
+            if len(df_hapus) == 0:
+                st.info("Tidak ada siswa yang cocok dengan filter.")
+            else:
+                df_hapus_reset = df_hapus.reset_index(drop=True)
+                opsi_hapus = df_hapus_reset.apply(
+                    lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']}) - Nilai {x['Nilai Akademik']:.2f}",
+                    axis=1
+                ).tolist()
+                siswa_dipilih = st.selectbox("Pilih siswa yang akan dihapus", opsi_hapus,
+                                             key="kelola_pilih")
+
+                idx_hapus_local = opsi_hapus.index(siswa_dipilih)
+                row_hapus = df_hapus_reset.iloc[idx_hapus_local]
+
+                st.markdown(
+                    f'<div class="card" style="border-left:5px solid #EF5B67;margin-top:.8rem;">'
+                    f'<div class="card-label">SISWA YANG AKAN DIHAPUS</div>'
+                    f'<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-top:.5rem;">'
+                    f'{row_hapus["Nama"]}</div>'
+                    f'<div style="font-size:.75rem;color:#5C6B85;margin-top:.3rem;">'
+                    f'{row_hapus["Kelas"]} - Absen {int(row_hapus["Absen"]):02d} - Nilai {row_hapus["Nilai Akademik"]:.2f}'
+                    f'</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+                konfirmasi_hapus = st.checkbox(
+                    f"Saya yakin ingin menghapus data ini",
+                    key="kelola_konfirmasi"
+                )
+
+                col_a, col_b = st.columns([1, 1])
+                with col_a:
+                    if st.button("Hapus Siswa Ini", use_container_width=True,
+                                 type="primary", disabled=not konfirmasi_hapus, key="btn_hapus_satu"):
+                        nama_hapus = row_hapus["Nama"]
+                        kelas_hapus = row_hapus["Kelas"]
+                        absen_hapus = int(row_hapus["Absen"])
+                        for i, s in enumerate(st.session_state.database_siswa):
+                            if (s["Nama"] == nama_hapus and s["Kelas"] == kelas_hapus
+                                    and int(s["Absen"]) == absen_hapus):
+                                st.session_state.database_siswa.pop(i)
+                                break
+                        save_database(st.session_state.database_siswa)
+                        add_log("Hapus siswa", f"{nama_hapus} ({kelas_hapus})")
+                        st.success(f"Data siswa {nama_hapus} berhasil dihapus.")
+                        st.rerun()
+
+            st.markdown("---")
+            with st.expander("⚠️ Hapus SEMUA data siswa"):
+                st.warning(
+                    "Tombol di bawah ini akan menghapus SELURUH data siswa dari sistem. "
+                    "Tindakan ini tidak bisa dibatalkan. Pastikan Anda sudah mendownload backup."
+                )
+                konfirmasi_semua = st.checkbox(
+                    f"Saya mengerti, hapus SEMUA {len(st.session_state.database_siswa)} data siswa",
+                    key="kelola_konfirmasi_semua",
+                )
+                if st.button("Hapus Semua Data", use_container_width=True,
+                             type="primary", disabled=not konfirmasi_semua, key="btn_hapus_semua"):
+                    jumlah = hapus_semua_siswa()
+                    st.session_state.database_siswa = []
+                    add_log("Hapus semua data", f"{jumlah} siswa dihapus")
+                    st.success(f"{jumlah} data siswa berhasil dihapus.")
                     st.rerun()
 
-        st.markdown("---")
-        with st.expander("⚠️ Hapus SEMUA data siswa"):
-            st.warning(
-                "Tombol di bawah ini akan menghapus SELURUH data siswa dari sistem. "
-                "Tindakan ini tidak bisa dibatalkan. Pastikan Anda sudah mendownload backup."
-            )
-            konfirmasi_semua = st.checkbox(
-                f"Saya mengerti, hapus SEMUA {len(st.session_state.database_siswa)} data siswa",
-                key="kelola_konfirmasi_semua",
-            )
-            if st.button("Hapus Semua Data", use_container_width=True,
-                         type="primary", disabled=not konfirmasi_semua, key="btn_hapus_semua"):
-                jumlah = len(st.session_state.database_siswa)
-                st.session_state.database_siswa = []
-                save_database(st.session_state.database_siswa)
-                add_log("Hapus semua data", f"{jumlah} siswa dihapus")
-                st.success(f"{jumlah} data siswa berhasil dihapus.")
-                st.rerun()
-
     with tab_download:
-        section_header("01", "Download Data Siswa", "SEMUA DATA ATAU PER KELAS")
+        if df_db.empty:
+            st.info("Belum ada data siswa.")
+        else:
+            section_header("01", "Download Data Siswa", "SEMUA DATA ATAU PER KELAS")
+
+            st.markdown(
+                '<div class="info-box blue" style="margin-bottom:1rem;">'
+                '<div class="info-title">Format Download</div>'
+                '<div class="info-text">Data akan diunduh dalam format CSV yang bisa dibuka dengan Excel, '
+                'Google Sheets, atau aplikasi pengolah data lainnya.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            df_full = pd.DataFrame(st.session_state.database_siswa)
+
+            st.markdown("**1. Download Semua Data**")
+            csv_all = df_full.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                f"Download Semua Data ({len(df_full)} siswa)",
+                data=csv_all,
+                file_name=f"data_semua_siswa_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="dl_semua",
+            )
+
+            st.markdown("---")
+            st.markdown("**2. Download Per Kelas**")
+            kelas_pilih_dl = st.selectbox(
+                "Pilih Kelas", sorted(df_full["Kelas"].unique().tolist()),
+                key="dl_kelas_pilih",
+            )
+            df_kelas_dl = df_full[df_full["Kelas"] == kelas_pilih_dl]
+            csv_kelas = df_kelas_dl.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                f"Download Kelas {kelas_pilih_dl} ({len(df_kelas_dl)} siswa)",
+                data=csv_kelas,
+                file_name=f"data_{kelas_pilih_dl}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key="dl_kelas",
+            )
+
+    # ---------- TAB BULK UPLOAD ----------
+    with tab_bulk:
+        section_header("01", "Upload Data Massal (Excel)", "INPUT BANYAK SISWA SEKALIGUS")
 
         st.markdown(
             '<div class="info-box blue" style="margin-bottom:1rem;">'
-            '<div class="info-title">Format Download</div>'
-            '<div class="info-text">Data akan diunduh dalam format CSV yang bisa dibuka dengan Excel, '
-            'Google Sheets, atau aplikasi pengolah data lainnya.</div>'
-            '</div>',
+            '<div class="info-title">Panduan Guru</div>'
+            '<div class="info-text">'
+            '1. Download template Excel di bawah<br>'
+            '2. Isi data siswa di Excel (bisa puluhan/ratusan sekaligus)<br>'
+            '3. Upload file Excel ke form di bawah<br>'
+            '4. Klik "Simpan ke Database"'
+            '</div></div>',
             unsafe_allow_html=True,
         )
 
-        df_full = pd.DataFrame(st.session_state.database_siswa)
+        section_header("02", "Download Template", "FORMAT STANDAR")
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Data Siswa"
+        
+        headers = ["Nama Siswa", "Kelas", "Absen", "Nilai Rapor", 
+                   "Self-Efficacy", "Keterlibatan Ortu", "Harapan Ortu", 
+                   "Dukungan Sekolah", "Motivasi", "Kecemasan", 
+                   "Fasilitas", "Kemalasan"]
+        ws.append(headers)
+        
+        # Styling header
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            
+        # Contoh baris
+        contoh = [
+            ["Budi Santoso", "IX-A", 1, 85.50, 4.5, 4.0, 3.5, 4.8, 3.2, 2.5, 4.5, 1.5],
+            ["Siti Aminah", "IX-A", 2, 88.00, 4.8, 4.2, 3.8, 4.9, 3.5, 2.0, 4.8, 1.2],
+        ]
+        for row in contoh:
+            ws.append(row)
+            
+        # Lebar kolom
+        for col in ws.columns:
+            ws.column_dimensions[col[0].column_letter].width = 18
 
-        st.markdown("**1. Download Semua Data**")
-        csv_all = df_full.to_csv(index=False).encode("utf-8")
+        output = io.BytesIO()
+        wb.save(output)
+        
         st.download_button(
-            f"Download Semua Data ({len(df_full)} siswa)",
-            data=csv_all,
-            file_name=f"data_semua_siswa_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-            mime="text/csv",
+            "📥 Download Template Excel",
+            data=output.getvalue(),
+            file_name="Template_Upload_Siswa.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
-            key="dl_semua",
         )
+        st.caption("Hapus 2 baris contoh di atas sebelum mengisi data asli.")
 
         st.markdown("---")
-        st.markdown("**2. Download Per Kelas**")
-        kelas_pilih_dl = st.selectbox(
-            "Pilih Kelas", sorted(df_full["Kelas"].unique().tolist()),
-            key="dl_kelas_pilih",
-        )
-        df_kelas_dl = df_full[df_full["Kelas"] == kelas_pilih_dl]
-        csv_kelas = df_kelas_dl.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            f"Download Kelas {kelas_pilih_dl} ({len(df_kelas_dl)} siswa)",
-            data=csv_kelas,
-            file_name=f"data_{kelas_pilih_dl}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-            mime="text/csv",
-            use_container_width=True,
-            key="dl_kelas",
-        )
+        section_header("03", "Upload File Excel", "PROSES DATA")
 
-        st.markdown("---")
-        st.markdown("**3. Download Backup Lengkap (Format JSON)**")
-        st.caption("Format JSON berguna untuk backup sistem atau migrasi data.")
-        json_all = json.dumps(st.session_state.database_siswa, indent=2, ensure_ascii=False)
-        st.download_button(
-            "Download Backup JSON",
-            data=json_all.encode("utf-8"),
-            file_name=f"backup_database_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
-            mime="application/json",
-            use_container_width=True,
-            key="dl_json",
-        )
+        uploaded = st.file_uploader("Pilih file Excel (.xlsx)", type=["xlsx"])
+
+        if uploaded:
+            try:
+                df_upload = pd.read_excel(uploaded)
+                st.success(f"✅ Berhasil membaca {len(df_upload)} baris data.")
+                
+                st.markdown("**Preview Data:**")
+                st.dataframe(df_upload.head(10), use_container_width=True) # Tampilkan 10 teratas
+
+                # Validasi kolom
+                required_cols = ["Nama Siswa", "Kelas", "Absen", "Nilai Rapor", 
+                                 "Self-Efficacy", "Keterlibatan Ortu", "Harapan Ortu", 
+                                 "Dukungan Sekolah", "Motivasi", "Kecemasan", 
+                                 "Fasilitas", "Kemalasan"]
+                missing = [c for c in required_cols if c not in df_upload.columns]
+                
+                if missing:
+                    st.error(f"❌ Format salah. Kolom berikut tidak ditemukan: {', '.join(missing)}")
+                else:
+                    st.info("Pastikan data sudah benar. Klik tombol di bawah untuk menyimpan.")
+                    
+                    if st.button("💾 Simpan Semua Data ke Database", type="primary", use_container_width=True):
+                        with st.spinner("Menyimpan data ke MongoDB..."):
+                            data_baru = []
+                            for _, row in df_upload.iterrows():
+                                nilai = float(row["Nilai Rapor"])
+                                kat = "Sangat Baik" if nilai >= 88 else "Baik" if nilai >= 84 else "Cukup" if nilai >= 80 else "Perlu Perhatian"
+                                
+                                data_baru.append({
+                                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                    "Nama": str(row["Nama Siswa"]).strip(),
+                                    "Kelas": str(row["Kelas"]).strip(),
+                                    "Absen": int(row["Absen"]),
+                                    "Nilai Akademik": round(nilai, 2),
+                                    "Kategori": kat,
+                                    "Self-Efficacy": float(row["Self-Efficacy"]),
+                                    "Keterlibatan Ortu": float(row["Keterlibatan Ortu"]),
+                                    "Harapan Ortu": float(row["Harapan Ortu"]),
+                                    "Dukungan Sekolah": float(row["Dukungan Sekolah"]),
+                                    "Motivasi": float(row["Motivasi"]),
+                                    "Kecemasan": float(row["Kecemasan"]),
+                                    "Fasilitas": float(row["Fasilitas"]),
+                                    "Kemalasan": float(row["Kemalasan"]),
+                                    "Dicatat Oleh": st.session_state.user_nama,
+                                })
+                            
+                            # Simpan ke MongoDB sekaligus
+                            for d in data_baru:
+                                insert_siswa(d)
+                                
+                            add_log("Bulk Upload", f"{len(data_baru)} siswa")
+                            st.success(f"🎉 Berhasil menyimpan {len(data_baru)} siswa ke database!")
+                            st.balloons()
+                            st.rerun()
+            except Exception as e:
+                st.error(f"❌ Gagal membaca file: {e}")
 
 # ================================================================
 # MODUL 06 - PENGATURAN
