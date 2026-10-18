@@ -20,7 +20,7 @@ from db_storage import (
 SUPER_ADMIN = {"admin", "regina"}
 
 # ================================================================
-# HELPERS
+# HELPER & AUTH
 # ================================================================
 def get_secret(section, key=None, default=None):
     try:
@@ -50,61 +50,72 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN BARU EYECATCHING)
+# KONFIGURASI HALAMAN & CSS ELEGAN
 # ================================================================
-st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-:root {
-    --primary: #6366f1; --primary-hover: #4f46e5;
-    --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --text-muted: #64748b;
-}
-html, body, [class*="css"] { font-family: 'Outfit', sans-serif; color: var(--text); }
-.stApp {
-    background: radial-gradient(circle at 0% 0%, #e0e7ff 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, #fce7f3 0%, transparent 50%), var(--bg);
-}
-.block-container { max-width: 1200px; padding-top: 2rem; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Base Settings */
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #1E293B; }
+.stApp { background-color: #F8FAFC; }
+.block-container { padding-top: 2rem; padding-bottom: 2rem; }
+
+/* Hide Streamlit Elements */
 #MainMenu, footer, header { visibility: hidden; }
 
-/* Glassmorphism Cards */
-.glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 20px; padding: 1.5rem;
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: #FFFFFF;
+    border-right: 1px solid #E2E8F0;
+    padding-top: 1rem;
 }
-.glass-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(31, 38, 135, 0.1); }
+[data-testid="stSidebar"] .block-container { padding-top: 1rem; }
+
+/* Cards */
+.saas-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+}
+.saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+
+/* Typography */
+h1, h2, h3 { color: #0F172A; font-weight: 700; letter-spacing: -0.5px; }
+.subtitle { color: #64748B; font-size: 0.95rem; margin-bottom: 2rem; }
+
+/* Custom Metric */
+.metric-title { font-size: 0.875rem; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-value { font-size: 2.5rem; font-weight: 700; color: #0F172A; line-height: 1.2; margin-top: 0.5rem; }
 
 /* Buttons */
 .stButton > button {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-    color: white; border: none; border-radius: 12px; padding: 0.6rem 1.2rem;
-    font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    background-color: #4F46E5;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    width: 100%;
 }
-.stButton > button:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5); }
+.stButton > button:hover { background-color: #4338CA; color: white; border: none; }
 
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { gap: 1rem; }
-.stTabs [data-baseweb="tab"] { border-radius: 10px; padding: 0.5rem 1rem; font-weight: 600; }
-
-/* Hero */
-.hero {
-    background: linear-gradient(135deg, #1e1b4b, #312e81); color: white;
-    padding: 3rem; border-radius: 24px; margin-bottom: 2rem;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+/* Inputs */
+.stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > select {
+    border-radius: 8px; border: 1px solid #CBD5E1;
 }
-.hero h1 { font-weight: 800; font-size: 3rem; margin-bottom: 0.5rem; }
-.hero p { color: #c7d2fe; font-size: 1.1rem; }
 
-/* Metric */
-.metric-box { text-align: center; }
-.metric-val { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
-.metric-lbl { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+/* Login Header */
+.login-header { text-align: center; margin-bottom: 2rem; margin-top: 4rem; }
+.login-header h1 { font-size: 2.5rem; color: #1E293B; }
+.login-header span { color: #4F46E5; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -119,7 +130,6 @@ for key, val in {
     if key not in st.session_state: st.session_state[key] = val
 
 def reload_data():
-    """Memuat ulang data HANYA untuk guru yang sedang login."""
     if st.session_state.user_nama:
         st.session_state.database_siswa = load_database(st.session_state.user_nama)
     st.session_state.config = load_config()
@@ -132,10 +142,6 @@ if st.session_state.config is None:
 def add_log(aksi, detail=""):
     tambah_log({"waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "user": st.session_state.user_nama or "-", "aksi": aksi, "detail": detail})
-
-def goto_page(page):
-    st.session_state.current_page = page
-    st.rerun()
 
 # ================================================================
 # KONSTANTA & FUNGSI ANALITIK
@@ -168,7 +174,8 @@ def kategori_nilai(n):
 def input_kategori(key, fname, is_student=False):
     cfg = SKALA_PILIHAN[fname]
     subjek = "kamu" if is_student else "siswa"
-    st.markdown(f"**{fname}** — {cfg['q'].replace('kamu', subjek)}")
+    st.markdown(f"<p style='font-weight: 500; font-size: 0.95rem; margin-bottom: 0.2rem;'>{fname}</p>", unsafe_allow_html=True)
+    st.caption(cfg['q'].replace('kamu', subjek))
     labels = [o[1] for o in cfg["o"]]
     vals = [float(o[0]) for o in cfg["o"]]
     default_idx = min(range(len(vals)), key=lambda i: abs(vals[i] - BASELINE_ASPEK[fname]))
@@ -180,153 +187,151 @@ def input_kategori(key, fname, is_student=False):
 # ================================================================
 def halaman_login():
     st.markdown("""
-        <div style="text-align: center; margin-top: 2rem; margin-bottom: 2rem;">
-            <h1 style="color: #312e81; font-weight: 800; font-size: 3rem;">SAA.<span style="color: #6366f1;">Analytics</span></h1>
-            <p style="color: #64748b; font-size: 1.1rem;">Smart Academic Analytics - SMPN 6 Salatiga</p>
+        <div class="login-header">
+            <h1>SAA.<span>Analytics</span></h1>
+            <p style="color: #64748B; font-size: 1.1rem;">Smart Academic Analytics - SMPN 6 Salatiga</p>
         </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        tab_login, tab_daftar, tab_siswa = st.tabs(["🔐 Masuk Guru", "📝 Daftar Akun", "🎒 Kuesioner Siswa"])
+        with st.container():
+            tab_login, tab_daftar, tab_siswa = st.tabs(["🔐 Masuk Guru", "📝 Daftar Akun", "🎒 Kuesioner Siswa"])
 
-        with tab_login:
-            with st.form("login_form"):
-                username = st.text_input("Username", placeholder="Masukkan username")
-                password = st.text_input("Password", type="password", placeholder="Masukkan password")
-                submit = st.form_submit_button("Masuk", use_container_width=True)
-                
-                if submit:
-                    users = load_users()
-                    if username in users and verify_password(password, users[username]["password"]):
-                        if users[username].get("status") == "pending":
-                            st.warning("Akun belum disetujui Admin.")
+            with tab_login:
+                with st.form("login_form"):
+                    username = st.text_input("Username")
+                    password = st.text_input("Password", type="password")
+                    submit = st.form_submit_button("Masuk")
+                    
+                    if submit:
+                        users = load_users()
+                        if username in users and verify_password(password, users[username]["password"]):
+                            if users[username].get("status") == "pending":
+                                st.warning("Akun belum disetujui Admin.")
+                            else:
+                                st.session_state.logged_in = True
+                                st.session_state.user_nama = users[username]["nama"]
+                                st.session_state.user_role = users[username]["role"]
+                                reload_data()
+                                add_log("Login", username)
+                                st.rerun()
                         else:
-                            st.session_state.logged_in = True
-                            st.session_state.user_nama = users[username]["nama"]
-                            st.session_state.user_role = users[username]["role"]
-                            reload_data() # Memuat data privat guru ini
-                            add_log("Login", username)
-                            st.rerun()
-                    else:
-                        st.error("Username atau password salah.")
+                            st.error("Username atau password salah.")
 
-        with tab_daftar:
-            with st.form("register_form"):
-                reg_nama = st.text_input("Nama Lengkap")
-                reg_user = st.text_input("Username Baru")
-                reg_pw = st.text_input("Password Baru", type="password")
-                reg_role = st.selectbox("Peran", ["guru", "wali_kelas"])
-                reg_submit = st.form_submit_button("Daftar", use_container_width=True)
-                
-                if reg_submit:
-                    users = load_users()
-                    if reg_user in users:
-                        st.error("Username sudah dipakai.")
-                    elif len(reg_pw) < 6:
-                        st.error("Password minimal 6 karakter.")
-                    else:
-                        users[reg_user] = {
-                            "password": hash_password(reg_pw), "nama": reg_nama, "role": reg_role,
-                            "status": "approved", "created": datetime.now().strftime("%Y-%m-%d %H:%M")
-                        }
-                        save_users(users)
-                        st.success("Pendaftaran berhasil! Silakan login.")
+            with tab_daftar:
+                with st.form("register_form"):
+                    reg_nama = st.text_input("Nama Lengkap")
+                    reg_user = st.text_input("Username Baru")
+                    reg_pw = st.text_input("Password Baru", type="password")
+                    reg_role = st.selectbox("Peran", ["guru", "wali_kelas"])
+                    reg_submit = st.form_submit_button("Daftar")
+                    
+                    if reg_submit:
+                        users = load_users()
+                        if reg_user in users:
+                            st.error("Username sudah dipakai.")
+                        elif len(reg_pw) < 6:
+                            st.error("Password minimal 6 karakter.")
+                        else:
+                            users[reg_user] = {
+                                "password": hash_password(reg_pw), "nama": reg_nama, "role": reg_role,
+                                "status": "approved", "created": datetime.now().strftime("%Y-%m-%d %H:%M")
+                            }
+                            save_users(users)
+                            st.success("Pendaftaran berhasil! Silakan login.")
 
-        with tab_siswa:
-            st.info("Isi kuesioner ini dengan jujur. Data akan masuk ke sistem guru Anda.")
-            with st.form("form_kuesioner"):
-                c1, c2, c3 = st.columns([2, 1, 1])
-                k_nama = c1.text_input("Nama Lengkap")
-                k_kelas = c2.selectbox("Kelas", KELAS_LIST)
-                k_absen = c3.number_input("Absen", 1, 50, 1)
-                
-                st.markdown("---")
-                f1 = input_kategori("k_s1", "Self-Efficacy Akademik", True)
-                f2 = input_kategori("k_s2", "Motivasi Belajar", True)
-                f3 = input_kategori("k_s3", "Kecemasan Akademik", True)
-                f4 = input_kategori("k_s4", "Kemalasan Belajar", True)
-                f5 = input_kategori("k_s5", "Keterlibatan Orang Tua", True)
-                f6 = input_kategori("k_s6", "Harapan Orang Tua", True)
-                f7 = input_kategori("k_s7", "Dukungan Sekolah", True)
-                f8 = input_kategori("k_s8", "Fasilitas Sekolah", True)
-                
-                sub_siswa = st.form_submit_button("Kirim Kuesioner", type="primary", use_container_width=True)
-                
-                if sub_siswa:
-                    if not k_nama.strip(): st.error("Nama wajib diisi!")
-                    else:
-                        profil = {
-                            "Self-Efficacy": f1, "Keterlibatan Ortu": f5, "Harapan Ortu": f6,
-                            "Dukungan Sekolah": f7, "Motivasi": f2, "Kecemasan": f3,
-                            "Fasilitas": f8, "Kemalasan": f4
-                        }
-                        ok, msg = update_kuesioner_siswa(k_nama, k_kelas, k_absen, profil)
-                        if ok: st.success(msg); st.balloons()
-                        else: st.error(msg)
+            with tab_siswa:
+                st.info("Isi kuesioner ini dengan jujur. Data akan masuk ke sistem guru Anda.")
+                with st.form("form_kuesioner"):
+                    c1, c2, c3 = st.columns([2, 1, 1])
+                    k_nama = c1.text_input("Nama Lengkap")
+                    k_kelas = c2.selectbox("Kelas", KELAS_LIST)
+                    k_absen = c3.number_input("Absen", 1, 50, 1)
+                    
+                    st.divider()
+                    f1 = input_kategori("k_s1", "Self-Efficacy Akademik", True)
+                    f2 = input_kategori("k_s2", "Motivasi Belajar", True)
+                    f3 = input_kategori("k_s3", "Kecemasan Akademik", True)
+                    f4 = input_kategori("k_s4", "Kemalasan Belajar", True)
+                    f5 = input_kategori("k_s5", "Keterlibatan Orang Tua", True)
+                    f6 = input_kategori("k_s6", "Harapan Orang Tua", True)
+                    f7 = input_kategori("k_s7", "Dukungan Sekolah", True)
+                    f8 = input_kategori("k_s8", "Fasilitas Sekolah", True)
+                    
+                    sub_siswa = st.form_submit_button("Kirim Kuesioner", type="primary")
+                    
+                    if sub_siswa:
+                        if not k_nama.strip(): st.error("Nama wajib diisi!")
+                        else:
+                            profil = {
+                                "Self-Efficacy": f1, "Keterlibatan Ortu": f5, "Harapan Ortu": f6,
+                                "Dukungan Sekolah": f7, "Motivasi": f2, "Kecemasan": f3,
+                                "Fasilitas": f8, "Kemalasan": f4
+                            }
+                            ok, msg = update_kuesioner_siswa(k_nama, k_kelas, k_absen, profil)
+                            if ok: st.success(msg); st.balloons()
+                            else: st.error(msg)
 
 # ================================================================
-# ROUTING
+# ROUTING (JIKA SUDAH LOGIN)
 # ================================================================
 if not st.session_state.logged_in:
     halaman_login()
     st.stop()
 
 # ================================================================
-# HOME (KAMAR GURU)
+# SIDEBAR NAVIGATION & LOGOUT
+# ================================================================
+with st.sidebar:
+    st.markdown(f"### 👋 Halo, {st.session_state.user_nama}")
+    st.markdown(f"<span style='color:#64748B; font-size: 0.85rem;'>Role: {st.session_state.user_role.capitalize()}</span>", unsafe_allow_html=True)
+    st.divider()
+    
+    # Navigasi
+    if st.button("🏠 Beranda", use_container_width=True): st.session_state.current_page = "home"
+    if st.button("📝 Input & Upload", use_container_width=True): st.session_state.current_page = "analisis"
+    if st.button("📊 Data Siswa Saya", use_container_width=True): st.session_state.current_page = "monitoring"
+    if st.button("🔬 Faktor Pengaruh", use_container_width=True): st.session_state.current_page = "kausal"
+    if st.button("💡 Rekomendasi", use_container_width=True): st.session_state.current_page = "rekomendasi"
+    
+    st.divider()
+    if st.button("🚪 Logout", type="primary", use_container_width=True):
+        add_log("Logout")
+        st.session_state.logged_in = False
+        st.session_state.user_nama = None
+        st.rerun()
+
+# ================================================================
+# HALAMAN: BERANDA
 # ================================================================
 if st.session_state.current_page == "home":
-    c1, c2 = st.columns([4, 1])
-    with c1:
-        st.markdown(f"<h2>Halo, <b>{st.session_state.user_nama}</b>! 👋</h2>", unsafe_allow_html=True)
-        st.write("Selamat datang di ruang kerja privat Anda. Data di sini hanya milik Anda.")
-    with c2:
-        if st.button("Logout", type="primary"):
-            add_log("Logout")
-            st.session_state.logged_in = False
-            st.session_state.user_nama = None
-            st.rerun()
+    st.markdown(f"<h1>Beranda</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p class='subtitle'>Selamat datang di ruang kerja privat Anda, {st.session_state.user_nama}.</p>", unsafe_allow_html=True)
 
-    st.markdown("---")
-    
-    # Statistik Privat Guru
     df = pd.DataFrame(st.session_state.database_siswa)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(df)}</div><div class="metric-lbl">Siswa Anda</div></div>', unsafe_allow_html=True)
-    with col2:
+    
+    # Kartu Metrik
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'<div class="saas-card"><div class="metric-title">Total Siswa Anda</div><div class="metric-value">{len(df)}</div></div>', unsafe_allow_html=True)
+    with c2:
         avg = df["Nilai Akademik"].mean() if not df.empty else 0
-        st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{avg:.2f}</div><div class="metric-lbl">Rata-rata Kelas</div></div>', unsafe_allow_html=True)
-    with col3:
-        st.markdown(f'<div class="glass-card metric-box"><div class="metric-val">{len(st.session_state.log)}</div><div class="metric-lbl">Aktivitas</div></div>', unsafe_allow_html=True)
-
-    st.markdown("### Modul Anda")
-    mods = [
-        ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
-        ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
-        ("🔬", "Analisis Faktor", "Lihat dampak & prioritas.", "kausal"),
-        ("💡", "Rekomendasi", "Saran tindak lanjut.", "rekomendasi"),
-        ("⚙️", "Pengaturan", "Pengaturan sistem.", "pengaturan")
-    ]
-    cols = st.columns(3)
-    for i, (icon, title, desc, page) in enumerate(mods):
-        with cols[i % 3]:
-            st.markdown(f'<div class="glass-card" style="min-height:150px;"><h3>{icon} {title}</h3><p style="color:grey;font-size:0.9rem;">{desc}</p></div>', unsafe_allow_html=True)
-            if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
-                goto_page(page)
+        st.markdown(f'<div class="saas-card"><div class="metric-title">Rata-rata Nilai</div><div class="metric-value">{avg:.2f}</div></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown(f'<div class="saas-card"><div class="metric-title">Log Aktivitas</div><div class="metric-value">{len(st.session_state.log)}</div></div>', unsafe_allow_html=True)
 
 # ================================================================
-# MODUL 01: INPUT & UPLOAD (DIGABUNG)
+# HALAMAN: MODUL 01 (INPUT MANUAL & EXCEL)
 # ================================================================
 elif st.session_state.current_page == "analisis":
-    st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 📝 Modul 01: Input Data Siswa")
+    st.markdown("<h1>Input Data Siswa</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>Pilih metode input manual (satu siswa) atau upload via Excel (banyak siswa).</p>", unsafe_allow_html=True)
     
-    tab_manual, tab_excel = st.tabs(["✍️ Input Manual (Satu Siswa)", "📤 Upload Excel (Banyak Siswa)"])
+    tab_excel, tab_manual = st.tabs(["📤 Upload Excel (Banyak Siswa)", "✍️ Input Manual (Satu Siswa)"])
     
-    # TAB EXCEL UPLOAD
     with tab_excel:
-        st.write("Upload data nilai siswa sekaligus. (Kuesioner diisi mandiri oleh siswa).")
+        st.info("Guru hanya perlu mengunggah Nama, Kelas, Absen, dan Nilai. Data kuesioner akan otomatis masuk saat siswa mengisi form mandiri.")
         
         wb = Workbook(); ws = wb.active; ws.title = "Nilai"
         ws.append(["Nama Siswa", "Kelas", "Absen", "Nilai Rapor"])
@@ -358,9 +363,7 @@ elif st.session_state.current_page == "analisis":
                 st.success("Data nilai berhasil disimpan! Kuesioner akan menyusul jika siswa mengisi.")
                 st.rerun()
                 
-    # TAB MANUAL
     with tab_manual:
-        st.write("Input satu siswa beserta kuesionernya sekaligus.")
         with st.form("manual_form"):
             c1, c2, c3 = st.columns([2, 1, 1])
             m_nama = c1.text_input("Nama Siswa")
@@ -368,7 +371,7 @@ elif st.session_state.current_page == "analisis":
             m_absen = c3.number_input("Absen", 1, 50, 1)
             m_nilai = st.number_input("Nilai Rapor", 60.0, 100.0, 83.78)
             
-            st.markdown("---")
+            st.divider()
             f1 = input_kategori("m_s1", "Self-Efficacy Akademik")
             f2 = input_kategori("m_s2", "Motivasi Belajar")
             f3 = input_kategori("m_s3", "Kecemasan Akademik")
@@ -394,19 +397,19 @@ elif st.session_state.current_page == "analisis":
                 st.rerun()
 
 # ================================================================
-# MODUL 05: MONITORING (DATA PRIBADI GURU)
+# HALAMAN: MODUL 05 (DATA SISWA PRIBADI)
 # ================================================================
 elif st.session_state.current_page == "monitoring":
-    st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 📊 Modul 05: Data Siswa Anda")
+    st.markdown("<h1>Data Siswa Saya</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>Data ini bersifat privat. Guru lain tidak dapat melihat tabel ini.</p>", unsafe_allow_html=True)
     
     df = pd.DataFrame(st.session_state.database_siswa)
     if df.empty:
-        st.info("Belum ada data siswa. Silakan input atau upload di Modul 01.")
+        st.info("Belum ada data siswa. Silakan input atau upload di menu Input & Upload.")
     else:
         st.dataframe(df[["Nama", "Kelas", "Absen", "Nilai Akademik", "Kategori"]], use_container_width=True)
         
-        with st.expander("🗑️ Hapus Data"):
+        with st.expander("🗑️ Zona Berbahaya"):
             if st.button("Hapus SEMUA Siswa Saya", type="primary"):
                 hapus_semua_siswa(st.session_state.user_nama)
                 reload_data()
@@ -414,26 +417,31 @@ elif st.session_state.current_page == "monitoring":
                 st.rerun()
 
 # ================================================================
-# MODUL 03: FAKTOR PENGARUH (Disederhanakan untuk Space)
+# HALAMAN: MODUL 03 (FAKTOR PENGARUH)
 # ================================================================
 elif st.session_state.current_page == "kausal":
-    st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 🔬 Modul 03: Faktor Pengaruh")
-    st.info("Grafik di bawah ini adalah hasil analisis populasi secara umum (berlaku untuk semua).")
-    # (Logika grafik sama seperti sebelumnya, dipotong untuk menghemat tempat di sini)
-    st.write("Dampak Sebab-Akibat (ATE) & Tingkat Kepentingan (SHAP)")
-    # Placeholder chart
-    st.bar_chart(pd.DataFrame({"Pengaruh": PENGARUH_DATA}).sort_values("Pengaruh"))
+    st.markdown("<h1>Faktor Pengaruh</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>Analisis sebab-akibat dan tingkat kepentingan prediksi.</p>", unsafe_allow_html=True)
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+        st.markdown("**Dampak Sebab-Akibat (Poin)**")
+        df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh")
+        st.bar_chart(df_ate.set_index("Faktor"))
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with c2:
+        st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+        st.markdown("**Tingkat Kepentingan Prediksi**")
+        df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Kepentingan")
+        st.bar_chart(df_shap.set_index("Faktor"), color="#10B981")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ================================================================
-# PENGATURAN & LOG
+# HALAMAN: MODUL 04 (REKOMENDASI)
 # ================================================================
-elif st.session_state.current_page == "pengaturan":
-    st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## ⚙️ Pengaturan")
-    if st.session_state.user_role == "admin":
-        st.write("Menu Admin (Bisa melihat semua data)")
-    else:
-        st.write("Profil Anda:")
-        st.write(f"Nama: {st.session_state.user_nama}")
-        st.write(f"Role: {st.session_state.user_role}")
+elif st.session_state.current_page == "rekomendasi":
+    st.markdown("<h1>Rekomendasi Tindak Lanjut</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>Saran berbasis data untuk intervensi sekolah.</p>", unsafe_allow_html=True)
+    st.info("Modul ini sedang disempurnakan untuk menampilkan rekomendasi personal per siswa.")
