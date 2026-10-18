@@ -20,6 +20,7 @@ from db_storage import (
 )
 
 SUPER_ADMIN = {"admin", "regina"}
+
 # ================================================================
 # HELPERS
 # ================================================================
@@ -51,7 +52,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN KACA)
+# PAGE CONFIG & CSS
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
 
@@ -405,7 +406,7 @@ elif st.session_state.current_page == "admin_users":
         else:
             st.info("Belum ada log sama sekali.")
 
-        # 4. Hapus Data Siswa (Kuesioner Salah)
+    # 4. Hapus Data Siswa (Kuesioner Salah)
     st.markdown("---")
     st.markdown("### 🗑️ Hapus Data Siswa (Kuesioner Salah)")
     st.write("Gunakan fitur ini jika ada siswa yang salah mengisi kuesioner.")
@@ -426,7 +427,7 @@ elif st.session_state.current_page == "admin_users":
             st.success("Data siswa berhasil dihapus permanen dari database.")
             st.rerun()
 
-                    # ZONA BERBAHAYA (HAPUS SEMUA)
+        # ZONA BERBAHAYA (HAPUS SEMUA)
         st.markdown("---")
         with st.expander("🚨 ZONA BERBAHAYA: Hapus SEMUA Data Siswa"):
             st.warning("Tindakan ini akan menghapus seluruh data siswa dari SEMUA guru secara permanen. Pastikan Anda sudah melakukan backup!")
@@ -438,7 +439,7 @@ elif st.session_state.current_page == "admin_users":
                 st.rerun()
 
 # ================================================================
-# MODUL 01: INPUT & UPLOAD (DIGABUNG)
+# MODUL 01: INPUT & UPLOAD
 # ================================================================
 elif st.session_state.current_page == "analisis":
     st.button("← Kembali", on_click=goto_page, args=("home",))
@@ -534,7 +535,7 @@ elif st.session_state.current_page == "monitoring":
                 st.rerun()
 
 # ================================================================
-# MODUL 03: FAKTOR PENGARUH (ANALISIS PER SISWA)
+# MODUL 03: FAKTOR PENGARUH
 # ================================================================
 elif st.session_state.current_page == "kausal":
     st.button("← Kembali", on_click=goto_page, args=("home",))
@@ -546,7 +547,6 @@ elif st.session_state.current_page == "kausal":
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
         st.stop()
 
-    # Pilih Siswa
     opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
     siswa_terpilih = st.selectbox("Pilih Siswa untuk Dianalisis", opsi_siswa)
     idx = opsi_siswa.index(siswa_terpilih)
@@ -580,7 +580,6 @@ elif st.session_state.current_page == "kausal":
         for k, v in kontribusi.items()
     ]).sort_values("Dampak (Poin)")
 
-    # Grafik batang horizontal
     st.markdown("**Grafik Dampak Faktor (Poin)**")
     st.bar_chart(df_k.set_index("Faktor")["Dampak (Poin)"], color="#6366f1")
     st.caption("Batang positif (ke kanan) menaikkan nilai, batang negatif (ke kiri) menurunkan nilai.")
@@ -589,12 +588,12 @@ elif st.session_state.current_page == "kausal":
     st.dataframe(df_k, use_container_width=True, hide_index=True)
 
 # ================================================================
-# MODUL 04: REKOMENDASI (CATATAN GURU & DOWNLOAD WORD)
+# MODUL 04: REKOMENDASI
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
     st.button("← Kembali", on_click=goto_page, args=("home",))
-    st.markdown("## 💡 Modul 04: Rekomendasi & Catatan Guru")
-    st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word.")
+    st.markdown("## 💡 Modul 04: Rekomendasi & Laporan")
+    st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word atau PDF.")
 
     df_siswa = pd.DataFrame(st.session_state.database_siswa)
     if df_siswa.empty:
@@ -712,14 +711,11 @@ elif st.session_state.current_page == "rekomendasi":
                     for j, s in enumerate(tugas["siswa"], 1):
                         st.markdown(f"{j}. {s}")
 
-         # ==========================================
-    # FITUR DOWNLOAD LAPORAN (WORD, PDF, & ZIP)
-    # ==========================================
+    # FITUR DOWNLOAD (WORD, PDF, ZIP)
     st.markdown("---")
     st.markdown("### 📄 Unduh Laporan Konsultasi")
     st.write("Laporan ini dirancang dengan bahasa yang mudah dipahami dan siap di-print.")
 
-    # --- FUNGSI PEMBUAT DOKUMEN (Dibuat terpisah agar bisa dipakai berulang) ---
     def buat_dokumen_word(siswa_data):
         from docx import Document
         from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -782,14 +778,12 @@ elif st.session_state.current_page == "rekomendasi":
         pdf = FPDF()
         pdf.add_page()
         
-        # Header
         pdf.set_font("Arial", 'B', 16)
         pdf.cell(0, 10, 'LAPORAN PERKEMBANGAN SISWA', ln=True, align='C')
         pdf.set_font("Arial", 'I', 10)
         pdf.cell(0, 10, 'Smart Academic Analytics (SAA) - SMPN 6 Salatiga', ln=True, align='C')
         pdf.ln(10)
 
-        # Info Siswa
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(40, 8, 'Nama Siswa', border=1)
         pdf.set_font("Arial", '', 11)
@@ -811,20 +805,18 @@ elif st.session_state.current_page == "rekomendasi":
         pdf.cell(0, 8, siswa_data['kategori'], border=1, ln=True)
         pdf.ln(10)
 
-        # Ringkasan
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 8, 'Ringkasan Kondisi', ln=True)
         pdf.set_font("Arial", '', 11)
         posisi_teks = "di atas" if siswa_data['selisih'] >= 0 else "di bawah"
-        teks_ringkasan = f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah. Berdasarkan analisis, {siswa_data['nama']} masuk dalam kategori {siswa_data['kategori']}."
+        teks_ringkasan = f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah."
         pdf.multi_cell(0, 6, teks_ringkasan)
         pdf.ln(5)
 
-        # Catatan
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 8, 'Catatan untuk Orang Tua & Guru', ln=True)
-        
         pdf.set_font("Arial", '', 11)
+        
         if siswa_data['fp'] is not None:
             teks_kekuatan = f"KEKUATAN UTAMA: {siswa_data['nama']} menunjukkan sikap yang sangat baik pada aspek {siswa_data['fp']['Aspek']}."
             pdf.multi_cell(0, 6, teks_kekuatan)
@@ -850,7 +842,6 @@ elif st.session_state.current_page == "rekomendasi":
             for s in saran_siswa[:2]:
                 pdf.multi_cell(0, 6, f"- {s}")
 
-        # Tanda Tangan
         pdf.ln(15)
         pdf.cell(100, 8, 'Guru / Konselor,', ln=False)
         pdf.cell(0, 8, f"Salatiga, {datetime.now().strftime('%d %B %Y')}", ln=True)
@@ -858,17 +849,14 @@ elif st.session_state.current_page == "rekomendasi":
         pdf.cell(100, 8, '(_______________________)', ln=False)
         pdf.cell(0, 8, f"( {st.session_state.user_nama} )", ln=True)
 
-        # Output PDF
-        pdf_output = pdf.output(dest='S').encode('latin-1') # fpdf2 butuh format bytes
+        pdf_output = pdf.output(dest='S').encode('latin-1')
         return io.BytesIO(pdf_output)
 
-    # Siapkan Data Siswa
     data_laporan = {
         'nama': nama, 'kelas': kelas, 'absen': absen, 'nilai': nilai,
         'kategori': kategori, 'selisih': selisih, 'fp': fp, 'fn': fn, 'tindak': TINDAK
     }
 
-    # --- TOMBOL DOWNLOAD INDIVIDU ---
     col_word, col_pdf = st.columns(2)
     
     with col_word:
@@ -876,7 +864,7 @@ elif st.session_state.current_page == "rekomendasi":
             try:
                 file_word = buat_dokumen_word(data_laporan)
                 st.download_button(
-                    label="⬇️ Klik di Sini untuk Simpan Word",
+                    label="⬇️ Simpan Word",
                     data=file_word,
                     file_name=f"Laporan_{nama.replace(' ', '_')}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -889,7 +877,7 @@ elif st.session_state.current_page == "rekomendasi":
             try:
                 file_pdf = buat_dokumen_pdf(data_laporan)
                 st.download_button(
-                    label="⬇️ Klik di Sini untuk Simpan PDF",
+                    label="⬇️ Simpan PDF",
                     data=file_pdf,
                     file_name=f"Laporan_{nama.replace(' ', '_')}.pdf",
                     mime="application/pdf"
@@ -897,18 +885,16 @@ elif st.session_state.current_page == "rekomendasi":
             except Exception as e:
                 st.error(f"Gagal membuat PDF: {e}")
 
-    # --- TOMBOL DOWNLOAD SEMUA (ZIP) ---
+    # ZIP DOWNLOAD
     st.markdown("---")
     st.markdown("### 🗂️ Unduh Semua Laporan (Massal)")
-    st.write("Unduh laporan seluruh siswa Anda dalam satu file ZIP.")
+    st.write("Unduh laporan seluruh siswa Anda dalam satu file ZIP (format Word).")
     
     if st.button("📦 Buat File ZIP (Semua Siswa)", use_container_width=True):
-        import zipfile
         try:
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 for _, row in df_siswa.iterrows():
-                    # Ambil data per siswa
                     s_nama = row["Nama"]
                     s_profil = {
                         "Self-Efficacy Akademik": float(row["Self-Efficacy"]),
@@ -938,10 +924,7 @@ elif st.session_state.current_page == "rekomendasi":
                         'tindak': TINDAK
                     }
                     
-                    # Buat dokumen Word (bisa diganti PDF jika mau)
                     file_buffer = buat_dokumen_word(s_data)
-                    
-                    # Masukkan ke dalam ZIP
                     nama_file = f"Laporan_{s_nama.replace(' ', '_')}.docx"
                     zip_file.writestr(nama_file, file_buffer.getvalue())
             
