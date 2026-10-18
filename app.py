@@ -541,9 +541,17 @@ elif st.session_state.current_page == "kausal":
     st.markdown("## 🔬 Modul 03: Analisis Faktor Siswa")
     st.write("Lihat faktor apa saja yang paling mempengaruhi nilai siswa secara spesifik.")
 
-    df_siswa = pd.DataFrame(st.session_state.database_siswa)
-    if df_siswa.empty:
+       df_all = pd.DataFrame(st.session_state.database_siswa)
+    if df_all.empty:
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
+        st.stop()
+        
+    # Hanya ambil siswa yang sudah mengisi kuesioner (Self-Efficacy > 0)
+    df_siswa = df_all[df_all["Self-Efficacy"] > 0]
+    
+    if df_siswa.empty:
+        st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
+        st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
         st.stop()
 
     opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
@@ -594,9 +602,17 @@ elif st.session_state.current_page == "rekomendasi":
     st.markdown("## 💡 Modul 04: Rekomendasi & Laporan")
     st.write("Saran tindak lanjut personal dan unduh laporan resmi dalam bentuk Word atau PDF.")
 
-    df_siswa = pd.DataFrame(st.session_state.database_siswa)
-    if df_siswa.empty:
+    df_all = pd.DataFrame(st.session_state.database_siswa)
+    if df_all.empty:
         st.warning("Belum ada data siswa. Silakan input data di Modul 01.")
+        st.stop()
+        
+    # Hanya ambil siswa yang sudah mengisi kuesioner (Self-Efficacy > 0)
+    df_siswa = df_all[df_all["Self-Efficacy"] > 0]
+    
+    if df_siswa.empty:
+        st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
+        st.info("Rekomendasi dan cetak laporan hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner.")
         st.stop()
 
     opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
