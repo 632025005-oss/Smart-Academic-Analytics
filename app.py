@@ -686,6 +686,13 @@ elif st.session_state.current_page == "rekomendasi":
     st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
     st.write("Laporan ini sudah lengkap dengan kolom tanda tangan guru dan siap di-print.")
 
+        # ==========================================
+    # FITUR DOWNLOAD LAPORAN WORD (RAPORT)
+    # ==========================================
+    st.markdown("---")
+    st.markdown("### 📄 Unduh Laporan Konsultasi (Word)")
+    st.write("Laporan ini sudah lengkap dengan kolom tanda tangan guru dan siap di-print.")
+
     if st.button("📥 Buat & Unduh Laporan Word", type="primary", use_container_width=True):
         try:
             from docx import Document
@@ -721,16 +728,16 @@ elif st.session_state.current_page == "rekomendasi":
 
             doc.add_paragraph()
             
-           # Hasil Analisis
-doc.add_heading('Hasil Analisis Faktor', level=1)
-doc.add_paragraph(f"Nilai siswa saat ini berada {abs(selisih):.2f} poin {posisi} rata-rata sekolah.")
-
-# Perbaikan: Mengambil langsung dari variabel fn dan fp yang sudah didefinisikan di atas
-teks_kekuatan = fp['Aspek'] if fp is not None else "Belum ada faktor kekuatan dominan."
-teks_kelemahan = fn['Aspek'] if fn is not None else "Tidak ada faktor yang signifikan menekan nilai."
-
-doc.add_paragraph(f"Kekuatan utama: {teks_kekuatan}")
-doc.add_paragraph(f"Faktor yang perlu diperbaiki: {teks_kelemahan}")
+            # Hasil Analisis
+            doc.add_heading('Hasil Analisis Faktor', level=1)
+            doc.add_paragraph(f"Nilai siswa saat ini berada {abs(selisih):.2f} poin {posisi} rata-rata sekolah.")
+            
+            # Perbaikan Variabel yang tadi error
+            teks_kekuatan = fp['Aspek'] if fp is not None else "Belum ada faktor kekuatan dominan."
+            teks_kelemahan = fn['Aspek'] if fn is not None else "Tidak ada faktor yang signifikan menekan nilai."
+            
+            doc.add_paragraph(f"Kekuatan utama: {teks_kekuatan}")
+            doc.add_paragraph(f"Faktor yang perlu diperbaiki: {teks_kelemahan}")
 
             # Prioritas Tindak Lanjut
             doc.add_heading('Prioritas Tindak Lanjut', level=1)
@@ -763,7 +770,7 @@ doc.add_paragraph(f"Faktor yang perlu diperbaiki: {teks_kelemahan}")
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
         except Exception as e:
-            st.error(f"Gagal membuat dokumen Word. Pastikan library 'python-docx' sudah terinstall. Error: {e}")
+            st.error(f"Gagal membuat dokumen Word. Error: {e}")
 
 # ================================================================
 # MODUL 05: PENGATURAN
