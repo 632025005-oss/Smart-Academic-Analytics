@@ -349,6 +349,37 @@ if st.session_state.current_page == "home":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+        st.markdown("<br>", unsafe_allow_html=True)
+    
+    # --- MENU MODUL DI HALAMAN UTAMA ---
+    st.markdown("### Modul Anda")
+    mods = [
+        ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
+        ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
+        ("🔬", "Analisis Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
+        ("💡", "Rekomendasi", "Saran tindak lanjut & laporan.", "rekomendasi"),
+        ("⚙️", "Pengaturan", "Ubah password & profil.", "pengaturan"),
+        ("ℹ️", "Tentang", "Info metode Hybrid Causal-Explainable.", "tentang")
+    ]
+    
+    if st.session_state.user_role == "admin":
+        mods.append(("👥", "Manajemen Pengguna", "Setujui akun & hapus data.", "admin_users"))
+        
+    cols = st.columns(3)
+    for i, (icon, title, desc, page) in enumerate(mods):
+        with cols[i % 3]:
+            st.markdown(f'''
+            <div class="kpi-card" style="align-items: flex-start; flex-direction: column; min-height: 120px; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">{icon}</div>
+                <h4 style="margin: 0; font-size: 1rem; color: #1E293B;">{title}</h4>
+                <p style="margin: 0; font-size: 0.75rem; color: #64748B;">{desc}</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
+                goto_page(page)
+                
+    st.markdown("<br><hr>", unsafe_allow_html=True)
+
     tab1, tab2, tab3 = st.tabs(["Overview", "Distribusi Nilai", "Faktor Penyebab"])
     
     with tab1:
