@@ -1016,33 +1016,30 @@ elif st.session_state.current_page == "rekomendasi":
         pdf.set_font("Arial", 'B', 12); pdf.cell(0, 8, 'Ringkasan Kondisi', ln=True)
         pdf.set_font("Arial", '', 11); posisi_teks = "di atas" if siswa_data['selisih'] >= 0 else "di bawah"
         
-        # Dapatkan lebar halaman efektif (A4 dikurangi margin kiri & kanan)
-        effective_width = pdf.w - pdf.l_margin - pdf.r_margin
-        
         teks_ringkasan = f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah."
-        pdf.multi_cell(effective_width, 6, teks_ringkasan); pdf.ln(5)
+        pdf.multi_cell(0, 6, teks_ringkasan, ln=1); pdf.ln(2)
         
         # Catatan
         pdf.set_font("Arial", 'B', 12); pdf.cell(0, 8, 'Catatan untuk Orang Tua & Guru', ln=True); pdf.set_font("Arial", '', 11)
         
         if siswa_data['fp'] is not None:
             teks_kekuatan = f"KEKUATAN UTAMA: {siswa_data['nama']} menunjukkan sikap yang sangat baik pada aspek {siswa_data['fp']['Aspek']}."
-            pdf.multi_cell(effective_width, 6, teks_kekuatan); pdf.ln(2)
+            pdf.multi_cell(0, 6, teks_kekuatan, ln=1); pdf.ln(2)
             
         if siswa_data['fn'] is not None:
             teks_area = f"AREA YANG PERLU DIDAMPINGI: Fokus pada aspek {siswa_data['fn']['Aspek']}."
-            pdf.multi_cell(effective_width, 6, teks_area); pdf.ln(2)
+            pdf.multi_cell(0, 6, teks_area, ln=1); pdf.ln(2)
             
             saran_guru = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
             saran_siswa = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
             
             pdf.set_font("Arial", 'B', 11); pdf.cell(0, 6, 'Saran untuk Guru/Sekolah:', ln=True); pdf.set_font("Arial", '', 11)
             for s in saran_guru[:3]: 
-                pdf.multi_cell(effective_width, 6, f"- {s}")
+                pdf.multi_cell(0, 6, f"- {s}", ln=1)
                 
             pdf.set_font("Arial", 'B', 11); pdf.cell(0, 6, 'Saran untuk Siswa/Orang Tua di Rumah:', ln=True); pdf.set_font("Arial", '', 11)
             for s in saran_siswa[:2]: 
-                pdf.multi_cell(effective_width, 6, f"- {s}")
+                pdf.multi_cell(0, 6, f"- {s}", ln=1)
             
         # Tanda Tangan
         pdf.ln(15); pdf.cell(100, 8, 'Guru / Konselor,', ln=False); pdf.cell(0, 8, f"Salatiga, {get_wib_time().strftime('%d %B %Y')}", ln=True)
