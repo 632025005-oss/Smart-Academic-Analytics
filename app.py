@@ -387,8 +387,9 @@ with st.sidebar:
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Prediksi", "Laporan", "Tentang"]
-    menu_icons = ["house-door", "pencil-square", "people", "search", "graph-up-arrow", "file-earmark-text", "info-circle"]
+    # MENU SIDEBAR DENGAN URUTAN BARU
+    menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Laporan", "Prediksi", "Tentang"]
+    menu_icons = ["house-door", "pencil-square", "people", "search", "file-earmark-text", "graph-up-arrow", "info-circle"]
     
     if st.session_state.user_role == "admin":
         menu_options.append("Pengaturan Admin")
@@ -403,7 +404,7 @@ with st.sidebar:
 
     mapping_menu = {
         "Beranda": "home", "Input & Upload": "analisis", "Data Siswa": "monitoring", 
-        "Pengaruh Faktor": "kausal", "Prediksi": "prediksi", "Laporan": "rekomendasi", 
+        "Pengaruh Faktor": "kausal", "Laporan": "rekomendasi", "Prediksi": "prediksi", 
         "Tentang": "tentang", "Pengaturan": "pengaturan", "Pengaturan Admin": "admin_users"
     }
     
@@ -415,7 +416,6 @@ with st.sidebar:
             
     default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    # TAMPILAN MENU MODERN
     menu_choice = option_menu(
         menu_title=None,
         options=menu_options,
@@ -447,7 +447,6 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.session_state.user_nama = None
         
-        # --- PERBAIKAN BUG LOGOUT (HAPUS MEMORI MENU) ---
         st.session_state.user_role = None
         st.session_state.current_page = "home"
         if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
@@ -511,7 +510,7 @@ if st.session_state.current_page == "home":
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
         ("🔍", "Pengaruh Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
-        ("💡", "Rekomendasi", "Saran tindak lanjut & laporan.", "rekomendasi"),
+        ("💡", "Laporan", "Saran tindak lanjut & laporan.", "rekomendasi"), # <--- DIUBAH JADI LAPORAN
         ("⚙️", "Pengaturan", "Ubah password & profil.", "pengaturan"),
         ("ℹ️", "Tentang", "Info metode Hybrid Causal-Explainable.", "tentang")
     ]
@@ -529,6 +528,7 @@ if st.session_state.current_page == "home":
                 <div class="module-desc">{desc}</div>
             </div>
             ''', unsafe_allow_html=True)
+            # Tombol ini akan memanggil goto_page(page) yang mengarah ke halaman "rekomendasi"
             if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
                 goto_page(page)
 
@@ -622,7 +622,7 @@ elif st.session_state.current_page == "kausal":
         st.dataframe(df_k, use_container_width=True, hide_index=True)
 
 # ================================================================
-# MODUL PREDIKSI (SUDAH ADA ISINYA)
+# MODUL PREDIKSI
 # ================================================================
 elif st.session_state.current_page == "prediksi":
     st.title("📈 Prediksi Nilai Siswa")
@@ -643,10 +643,9 @@ elif st.session_state.current_page == "prediksi":
             p_fas = st.slider("Fasilitas Sekolah", 1.0, 5.0, 4.5, 0.1)
             
         if st.button("🔮 Hitung Prediksi Nilai", type="primary", use_container_width=True):
-            # Simulasi prediksi sederhana berdasarkan bobot (Placeholder logic)
             base_score = 75.0
             score = base_score + (p_se * 1.5) + (p_ortu * 1.2) + (p_mot * 1.0) - (p_cem * 0.8) - (p_mal * 1.5) + (p_sekolah * 0.5)
-            score = min(max(score, 60.0), 100.0) # Batasi 60-100
+            score = min(max(score, 60.0), 100.0)
             
             kat, warna = kategori_nilai(score)
             
@@ -857,7 +856,7 @@ elif st.session_state.current_page == "monitoring":
 # MODUL 04: REKOMENDASI & LAPORAN
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
-    st.title("💡 Rekomendasi & Laporan")
+    st.title("💡 Laporan & Rekomendasi")
     df_all = pd.DataFrame(st.session_state.database_siswa)
     if df_all.empty:
         st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
