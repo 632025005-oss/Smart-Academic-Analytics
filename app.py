@@ -10,7 +10,7 @@ import io
 import zipfile
 import base64
 from openpyxl import Workbook
-from streamlit_option_menu import option_menu  # <--- TAMBAHAN BARU
+from streamlit_option_menu import option_menu  # <--- TAMBAHAN LIBRARY IKON
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -355,40 +355,38 @@ with st.sidebar:
     else:
         logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
 
-    # --- HEADER SIDEBAR BARU (Sesuai Gambar) ---
+    # --- HEADER SIDEBAR (Teks Tetap Asli) ---
     st.markdown(f"""
     <div class="sb-logo">
         <div class="sb-logo-icon">
             {logo_html}
         </div>
-        <div class="sb-logo-text" style="display: flex; flex-direction: column;">
-            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1;">Dashboard</h2>
-            <div style="font-size: 0.7rem; color: #A7F3D0; line-height: 1.3; font-weight: 600; margin-top: 4px;">Prestasi Akademik Siswa<br>SMP Negeri 6 Salatiga</div>
+        <div class="sb-logo-text">
+            <h2>SAA.Analytics</h2>
         </div>
     </div>
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # --- MENU NAVIGASI BARU (Gunakan Ikon Outline) ---
-    menu_options = ["Beranda", "Data Siswa", "Analisis Causal", "Prediksi", "Penjelasan (SHAP)", "Laporan", "Input & Upload"]
-    menu_icons = ["house-door", "people", "diagram-3", "graph-up-arrow", "lightbulb", "file-earmark-text", "cloud-upload"]
+    # --- MENU NAVIGASI (Hanya Ikon yang Diganti) ---
+    menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Prediksi", "Laporan", "Tentang"]
+    menu_icons = ["house-door", "pencil-square", "people", "search", "graph-up-arrow", "file-earmark-text", "info-circle"]
     
     if st.session_state.user_role == "admin":
         menu_options.append("Pengaturan Admin")
         menu_icons.append("gear")
+        menu_options.append("Logout")
+        menu_icons.append("box-arrow-right")
     else:
         menu_options.append("Pengaturan")
         menu_icons.append("gear")
-        
-    menu_options.append("Logout")
-    menu_icons.append("box-arrow-right")
+        menu_options.append("Logout")
+        menu_icons.append("box-arrow-right")
 
     mapping_menu = {
-        "Beranda": "home", "Data Siswa": "monitoring", 
-        "Analisis Causal": "kausal", "Prediksi": "prediksi", 
-        "Penjelasan (SHAP)": "kausal", "Laporan": "rekomendasi", 
-        "Input & Upload": "analisis", "Pengaturan": "pengaturan", 
-        "Pengaturan Admin": "admin_users"
+        "Beranda": "home", "Input & Upload": "analisis", "Data Siswa": "monitoring", 
+        "Pengaruh Faktor": "kausal", "Prediksi": "prediksi", "Laporan": "rekomendasi", 
+        "Tentang": "tentang", "Pengaturan": "pengaturan", "Pengaturan Admin": "admin_users"
     }
     
     # Cari index menu yang sedang aktif
@@ -400,7 +398,7 @@ with st.sidebar:
             
     default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    # Tampilkan Menu dengan Ikon Modern
+    # Tampilkan Menu Modern dengan streamlit_option_menu
     menu_choice = option_menu(
         menu_title=None,
         options=menu_options,
@@ -425,7 +423,7 @@ with st.sidebar:
             st.session_state.current_page = new_page
             st.rerun()
 
-    # Quote & Ilustrasi Buku (Tetap dipertahankan)
+    # Quote & Ilustrasi Buku
     st.markdown("""
     <div class="sb-bottom">
         <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
