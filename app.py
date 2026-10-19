@@ -71,7 +71,7 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 #MainMenu, footer, header { visibility: hidden; }
 
 /* =========================================
-   DESAIN SIDEBAR (BASE)
+   DESAIN SIDEBAR & MENU
    ========================================= */
 [data-testid="stSidebar"] {
     background-color: #006B62 !important;
@@ -88,18 +88,36 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .sb-logo-icon { display: flex; align-items: center; justify-content: center; }
 .sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
-/* Navigasi Radio Button */
-[data-testid="stSidebar"] .stRadio > div { gap: 0.2rem; padding: 0 15px;}
-[data-testid="stSidebar"] .stRadio label {
-    display: flex; align-items: center; padding: 10px 15px;
-    border-radius: 10px; font-weight: 700; font-size: 0.9rem;
-    cursor: pointer; transition: all 0.2s; border: none;
+/* Hilangkan Lingkaran Radio Button & Rapikan Menu */
+[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    padding: 12px 15px !important;
+    border-radius: 10px;
+    background-color: transparent;
+    transition: all 0.2s;
+    border: none !important;
+    margin-bottom: 2px;
 }
-[data-testid="stSidebar"] .stRadio label:hover { background-color: rgba(255,255,255,0.1); }
-[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none; }
-[data-testid="stSidebar"] .stRadio input:checked + div + div label {
-    background-color: white; color: #006B62 !important;
+[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+/* Sembunyikan bulatan radio */
+[data-testid="stSidebar"] div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+/* Teks Menu */
+[data-testid="stSidebar"] div[role="radiogroup"] > label > div:last-child {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+/* Menu Aktif (Warna Putih) */
+[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"],
+[data-testid="stSidebar"] div[role="radiogroup"] > label[aria-checked="true"] {
+    background-color: white !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] *,
+[data-testid="stSidebar"] div[role="radiogroup"] > label[aria-checked="true"] * {
+    color: #006B62 !important;
 }
 
 /* Quote & Ilustrasi */
@@ -156,9 +174,7 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 1. Tampilan Desktop (Layar Lebar > 768px) */
 @media (min-width: 769px) {
-    /* Sembunyikan tombol panah buka/tutup sidebar di desktop */
     [data-testid="collapsedControl"] { display: none; } 
-    /* Kunci lebar sidebar */
     [data-testid="stSidebar"] {
         min-width: 280px !important; max-width: 280px !important;
         transform: translateX(0) !important; visibility: visible !important;
@@ -167,28 +183,28 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 2. Tampilan Mobile & Tablet (Layar Kecil <= 768px) */
 @media (max-width: 768px) {
-    /* Izinkan Streamlit menggunakan animasi geser (drawer) bawaan untuk sidebar */
+    /* Biarkan Streamlit menggunakan mode drawer (geser) bawaan untuk sidebar */
     [data-testid="stSidebar"] {
         min-width: 250px !important; max-width: 250px !important;
-        transform: none !important; visibility: visible !important;
+        /* Hapus paksaan visibility agar tombol panah muncul */
     }
     
-    /* Sesuaikan padding konten utama agar tidak sesak */
+    /* Atur ulang padding konten */
     .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
     
-    /* Ubah layout header menjadi vertikal (atas-bawah) */
+    /* Ubah layout header menjadi vertikal */
     .top-header {
         flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem;
     }
     .top-header h1 { font-size: 1.3rem; }
     .top-header h2 { font-size: 1.2rem; }
 
-    /* Perkecil teks pada kartu statistik (KPI) */
+    /* Perkecil kartu statistik */
     .kpi-card { padding: 1rem; gap: 0.8rem; }
     .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
     .kpi-info h2 { font-size: 1.5rem; }
     
-    /* Perkecil padding pada kartu modul */
+    /* Perkecil kartu modul */
     .module-card { padding: 1rem; min-height: auto; }
 }
 </style>
