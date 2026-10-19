@@ -10,7 +10,7 @@ import io
 import zipfile
 import base64
 from openpyxl import Workbook
-from streamlit_option_menu import option_menu  # Library Ikon Modern
+from streamlit_option_menu import option_menu
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -53,7 +53,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (RESPONSIVE FIX UNTUK MOBILE)
+# PAGE CONFIG & CSS
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -70,7 +70,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .stApp { background-color: var(--bg); }
 .block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
 
-/* Sembunyikan menu bawaan Streamlit (titik tiga) & footer */
 #MainMenu, footer { visibility: hidden; }
 
 /* =========================================
@@ -142,8 +141,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 /* =========================================
    MEDIA QUERIES (RESPONSIVE DESIGN)
    ========================================= */
-
-/* 1. Tampilan Desktop (Layar Lebar > 768px) */
 @media (min-width: 769px) {
     header { visibility: hidden; }
     [data-testid="collapsedControl"] { display: none; } 
@@ -153,7 +150,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
     }
 }
 
-/* 2. Tampilan Mobile & Tablet (Layar Kecil <= 768px) */
 @media (max-width: 768px) {
     header { visibility: visible !important; background-color: transparent !important; }
     [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; color: #0D9488 !important; }
@@ -171,13 +167,16 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 }
 
 /* =========================================
-   FIX UNTUK BACKGROUND MENU PUTIH (OPTION_MENU)
+   FIX TOTAL: BACKGROUND MENU JADI HIJAU GELAP
    ========================================= */
-[data-testid="stSidebar"] ul.nav-pills {
+.stCustomComponentV1 {
     background-color: transparent !important;
 }
+[data-testid="stSidebar"] ul.nav-pills {
+    background-color: #006B62 !important;
+}
 [data-testid="stSidebar"] ul.nav-pills a.nav-link {
-    background-color: transparent !important;
+    background-color: #006B62 !important;
     color: white !important;
 }
 [data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
@@ -383,7 +382,6 @@ with st.sidebar:
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # --- MENU NAVIGASI (Hanya Ikon yang Diganti, Teks Tetap) ---
     menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Prediksi", "Laporan", "Tentang"]
     menu_icons = ["house-door", "pencil-square", "people", "search", "graph-up-arrow", "file-earmark-text", "info-circle"]
     
@@ -412,7 +410,7 @@ with st.sidebar:
             
     default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    # TAMPILAN MENU MODERN
+    # PERBAIKAN: Background container dibuat hijau gelap, bukan transparan
     menu_choice = option_menu(
         menu_title=None,
         options=menu_options,
@@ -420,7 +418,7 @@ with st.sidebar:
         default_index=default_idx,
         key="sidebar_menu",
         styles={
-            "container": {"padding": "0!important", "background-color": "transparent !important"},
+            "container": {"padding": "0!important", "background-color": "#006B62 !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
             "nav-link": {
                 "font-size": "15px", 
@@ -429,7 +427,7 @@ with st.sidebar:
                 "--hover-color": "#005f57", 
                 "color": "white !important", 
                 "font-weight": "600", 
-                "background-color": "transparent !important"
+                "background-color": "#006B62 !important"
             },
             "nav-link-selected": {
                 "background-color": "#004d45 !important", 
@@ -474,7 +472,6 @@ if st.session_state.current_page == "home":
     
     df = pd.DataFrame(st.session_state.database_siswa)
     
-    # KPI Cards
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon green">👥</div><div class="kpi-info"><h4>Jumlah Siswa</h4><h2>{len(df)}</h2><p>Siswa yang sudah didata</p></div></div>', unsafe_allow_html=True)
@@ -488,7 +485,6 @@ if st.session_state.current_page == "home":
         min_val = df['Nilai Akademik'].min() if not df.empty else 0
         st.markdown(f'<div class="kpi-card"><div class="kpi-icon purple">📉</div><div class="kpi-info"><h4>Nilai Terendah</h4><h2>{min_val:.2f}</h2><p>Skor terendah yang dicapai</p></div></div>', unsafe_allow_html=True)
 
-    # Progress Bar Kuesioner
     if st.session_state.user_role != "admin" and not df.empty:
         total_siswa = len(df)
         sudah_isi = len(df[df["Self-Efficacy"] > 0])
@@ -499,7 +495,6 @@ if st.session_state.current_page == "home":
 
     st.markdown("<br><hr>", unsafe_allow_html=True)
     
-    # --- MENU MODUL ---
     st.markdown("### Modul Navigasi")
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
@@ -598,7 +593,6 @@ elif st.session_state.current_page == "kausal":
             for k, v in kontribusi.items()
         ]).sort_values("Dampak (Poin)")
 
-        # Radar Chart
         st.markdown("**Radar Chart: Perbandingan Profil Siswa vs Rata-rata Sekolah**")
         df_radar = pd.DataFrame({"Faktor": list(profil.keys()), "Nilai Siswa": list(profil.values()), "Rata-rata Sekolah": [BASELINE_ASPEK[k] for k in profil.keys()]})
         
@@ -608,7 +602,6 @@ elif st.session_state.current_page == "kausal":
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
         st.plotly_chart(fig_radar, use_container_width=True)
 
-        # Bar Chart
         st.markdown("**Grafik Dampak Faktor (Poin)**")
         fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
         fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
@@ -618,12 +611,42 @@ elif st.session_state.current_page == "kausal":
         st.dataframe(df_k, use_container_width=True, hide_index=True)
 
 # ================================================================
-# MODUL PREDIKSI (PLACEHOLDER)
+# MODUL PREDIKSI (SUDAH ADA ISINYA / MOCKUP UI)
 # ================================================================
 elif st.session_state.current_page == "prediksi":
     st.title("📈 Prediksi Nilai Siswa")
-    st.info("Halaman ini berisi prediksi nilai siswa berdasarkan profil 8 faktor.")
-    st.write("*(Fitur ini sedang dalam pengembangan)*")
+    st.write("Halaman ini mensimulasikan prediksi nilai siswa berdasarkan profil 8 faktor. (Catatan: Model Machine Learning asli dapat diintegrasikan di sini).")
+    
+    with st.container():
+        st.markdown("### Masukkan Profil Siswa")
+        col1, col2 = st.columns(2)
+        with col1:
+            p_se = st.slider("Self-Efficacy Akademik", 1.0, 5.0, 4.0, 0.1)
+            p_mot = st.slider("Motivasi Belajar", 1.0, 5.0, 3.5, 0.1)
+            p_cem = st.slider("Kecemasan Akademik", 1.0, 5.0, 2.5, 0.1)
+            p_mal = st.slider("Kemalasan Belajar", 1.0, 5.0, 2.0, 0.1)
+        with col2:
+            p_ortu = st.slider("Keterlibatan Orang Tua", 1.0, 5.0, 4.0, 0.1)
+            p_harap = st.slider("Harapan Orang Tua", 1.0, 5.0, 3.5, 0.1)
+            p_sekolah = st.slider("Dukungan Sekolah", 1.0, 5.0, 4.0, 0.1)
+            p_fas = st.slider("Fasilitas Sekolah", 1.0, 5.0, 4.5, 0.1)
+            
+        if st.button("🔮 Hitung Prediksi Nilai", type="primary", use_container_width=True):
+            # Simulasi prediksi sederhana berdasarkan bobot (Placeholder logic)
+            base_score = 75.0
+            score = base_score + (p_se * 1.5) + (p_ortu * 1.2) + (p_mot * 1.0) - (p_cem * 0.8) - (p_mal * 1.5) + (p_sekolah * 0.5)
+            score = min(max(score, 60.0), 100.0) # Batasi 60-100
+            
+            kat, warna = kategori_nilai(score)
+            
+            st.markdown(f"""
+            <div style="background:white; border-left:5px solid {warna}; padding:2rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); text-align:center; margin-top:20px;">
+                <h3 style="margin:0; color:#64748B;">Hasil Prediksi Nilai Akademik</h3>
+                <h1 style="font-size:4rem; color:{warna}; margin:10px 0;">{score:.2f}</h1>
+                <h4 style="margin:0; color:{warna};">Kategori: {kat}</h4>
+            </div>
+            """, unsafe_allow_html=True)
+            st.info("💡 *Angka di atas adalah simulasi (Mockup) menggunakan perhitungan linear sederhana. Kamu bisa mengganti bagian logika ini dengan model Random Forest (.pkl) milikmu.*")
 
 # ================================================================
 # MODUL ADMIN: MANAJEMEN PENGGUNA
