@@ -52,7 +52,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (RESPONSIVE UNTUK DESKTOP & MOBILE)
+# PAGE CONFIG & CSS (RESPONSIVE FIX UNTUK MOBILE)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -68,7 +68,9 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--text-main); }
 .stApp { background-color: var(--bg); }
 .block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
-#MainMenu, footer, header { visibility: hidden; }
+
+/* Sembunyikan menu bawaan Streamlit (titik tiga) & footer */
+#MainMenu, footer { visibility: hidden; }
 
 /* =========================================
    DESAIN SIDEBAR & MENU
@@ -174,6 +176,8 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 1. Tampilan Desktop (Layar Lebar > 768px) */
 @media (min-width: 769px) {
+    /* Sembunyikan header hanya di desktop */
+    header { visibility: hidden; }
     [data-testid="collapsedControl"] { display: none; } 
     [data-testid="stSidebar"] {
         min-width: 280px !important; max-width: 280px !important;
@@ -183,10 +187,23 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 2. Tampilan Mobile & Tablet (Layar Kecil <= 768px) */
 @media (max-width: 768px) {
-    /* Biarkan Streamlit menggunakan mode drawer (geser) bawaan untuk sidebar */
+    /* MUNCULKAN HEADER STREAMLIT agar tombol panah/hamburger muncul */
+    header { 
+        visibility: visible !important; 
+        background-color: transparent !important; 
+    }
+    
+    /* Pastikan tombol panah terlihat jelas */
+    [data-testid="collapsedControl"] { 
+        display: flex !important; 
+        visibility: visible !important;
+        color: #0D9488 !important;
+    }
+    
+    /* Biarkan sidebar menjadi mode drawer (bisa digeser buka-tutup) */
     [data-testid="stSidebar"] {
-        min-width: 250px !important; max-width: 250px !important;
-        /* Hapus paksaan visibility agar tombol panah muncul */
+        min-width: 250px !important; 
+        max-width: 250px !important;
     }
     
     /* Atur ulang padding konten */
