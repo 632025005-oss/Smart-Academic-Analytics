@@ -1046,7 +1046,8 @@ elif st.session_state.current_page == "rekomendasi":
         pdf.ln(15); pdf.cell(100, 8, '(_______________________)', ln=False); pdf.cell(0, 8, f"( {st.session_state.user_nama} )", ln=True)
         
         # Output PDF
-        return io.BytesIO(pdf.output(dest='S').encode('latin-1'))
+        pdf_output = pdf.output(dest='S')
+        return io.BytesIO(pdf_output)
 
     data_laporan = {'nama': nama, 'kelas': kelas, 'absen': absen, 'nilai': nilai, 'kategori': kategori, 'selisih': selisih, 'fp': fp, 'fn': fn, 'tindak': TINDAK}
 
