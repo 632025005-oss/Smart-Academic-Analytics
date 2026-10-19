@@ -11,6 +11,7 @@ import zipfile
 import base64
 from openpyxl import Workbook
 from streamlit_option_menu import option_menu
+import pytz  # <--- TAMBAHAN UNTUK WAKTU WIB
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -25,6 +26,11 @@ SUPER_ADMIN = {"admin", "regina"}
 # ================================================================
 # HELPER & AUTH
 # ================================================================
+def get_wib_time():
+    """Fungsi untuk mendapatkan waktu WIB (UTC+7)"""
+    tz = pytz.timezone('Asia/Jakarta')
+    return datetime.now(tz)
+
 def get_secret(section, key=None, default=None):
     try:
         if key is None: return st.secrets[section]
@@ -45,7 +51,7 @@ def load_users():
                 "password": hash_password(info["password"]),
                 "nama":     info.get("nama", username.capitalize()),
                 "role":     "admin", "kelas_ampu": None, "email": info.get("email", ""),
-                "status":   "approved", "created":  datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "status":   "approved", "created":  get_wib_time().strftime("%Y-%m-%d %H:%M"),
             }
         _db_save_users(users)
     return users
@@ -210,12 +216,10 @@ if st.session_state.config is None:
     reload_data()
 
 def add_log(aksi, detail=""):
-    tambah_log({"waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user": st.session_state.user_nama or "-", "role": st.session_state.user_role or "-", "aksi": aksi, "detail": detail})
+    tambah_log({"waktu": get_wib_time().strftime("%Y-%m-%d %H:%M:%S"), "user": st.session_state.user_nama or "-", "role": st.session_state.user_role or "-", "aksi": aksi, "detail": detail})
 
-# FUNGSI GOTO_PAGE YANG SUDAH DIPERBAIKI
 def goto_page(page):
     st.session_state.current_page = page
-    # Hapus memori menu sidebar agar sinkron saat ditekan dari beranda
     if "sidebar_menu" in st.session_state: 
         del st.session_state["sidebar_menu"]
     st.rerun()
@@ -232,14 +236,14 @@ RATA_RATA_NILAI = 83.78
 KELAS_LIST = [f"VII-{x}" for x in "ABCDEFGH"] + [f"VIII-{x}" for x in "ABCDEFGH"] + [f"IX-{x}" for x in "ABCDEFGH"]
 
 SKALA_PILIHAN = {
-    "Self-Efficacy Akademik": {"q": "Seberapa yakin kamu terhadap kemampuan akademikmu?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
-    "Keterlibatan Orang Tua": {"q": "Seberapa aktif orang tua mendampingi kamu belajar?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
-    "Harapan Orang Tua": {"q": "Seberapa tinggi tuntutan orang tua terhadap nilaimu?", "o": [("1","Sangat rendah"),("2","Rendah"),("3","Sedang"),("4","Tinggi"),("5","Sangat tinggi")]},
-    "Dukungan Sekolah": {"q": "Seberapa besar dukungan sekolah kepadamu?", "o": [("1","Sangat kurang"),("2","Kurang"),("3","Cukup"),("4","Baik"),("5","Sangat baik")]},
-    "Motivasi Belajar": {"q": "Seberapa besar motivasi belajarmu?", "o": [("1","Tidak ada"),("2","Kurang"),("3","Cukup"),("4","Baik"),("5","Sangat baik")]},
-    "Kecemasan Akademik": {"q": "Seberapa sering kamu cemas saat belajar/ujian?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
-    "Fasilitas Sekolah": {"q": "Seberapa memadai fasilitas belajarmu?", "o": [("1","Sangat kurang"),("2","Kurang"),("3","Cukup"),("4","Memadai"),("5","Sangat memadai")]},
-    "Kemalasan Belajar": {"q": "Seberapa sering kamu malas belajar?", "o": [("1","Tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]}
+    "Self-Efficacy Akademik": {"q": "Seberapa yakin siswa terhadap kemampuan akademiknya?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
+    "Keterlibatan Orang Tua": {"q": "Seberapa aktif orang tua siswa mendampingi belajarnya?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
+    "Harapan Orang Tua": {"q": "Seberapa tinggi tuntutan orang tua terhadap nilai siswa?", "o": [("1","Sangat rendah"),("2","Rendah"),("3","Sedang"),("4","Tinggi"),("5","Sangat tinggi")]},
+    "Dukungan Sekolah": {"q": "Seberapa besar dukungan sekolah kepada siswa?", "o": [("1","Sangat kurang"),("2","Kurang"),("3","Cukup"),("4","Baik"),("5","Sangat baik")]},
+    "Motivasi Belajar": {"q": "Seberapa besar motivasi belajar siswa?", "o": [("1","Tidak ada"),("2","Kurang"),("3","Cukup"),("4","Baik"),("5","Sangat baik")]},
+    "Kecemasan Akademik": {"q": "Seberapa sering siswa cemas saat belajar/ujian?", "o": [("1","Hampir tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]},
+    "Fasilitas Sekolah": {"q": "Seberapa memadai fasilitas belajar siswa?", "o": [("1","Sangat kurang"),("2","Kurang"),("3","Cukup"),("4","Memadai"),("5","Sangat memadai")]},
+    "Kemalasan Belajar": {"q": "Seberapa sering siswa malas belajar?", "o": [("1","Tidak pernah"),("2","Jarang"),("3","Kadang-kadang"),("4","Sering"),("5","Hampir selalu")]}
 }
 
 def analisis_kausal(nilai_akademik, profil_siswa):
@@ -263,8 +267,10 @@ def kategori_nilai(n):
 
 def input_kategori(key, fname, is_student=False):
     cfg = SKALA_PILIHAN[fname]
-    subjek = "kamu" if is_student else "siswa"
-    st.markdown(f"**{fname}** — {cfg['q'].replace('kamu', subjek)}")
+    # Jika dipanggil dari form siswa, ubah kata "siswa" menjadi "kamu"
+    pertanyaan = cfg['q'] if not is_student else cfg['q'].replace("siswa", "kamu").replace("nya", "mu").replace("belajarnya", "belajarmu").replace("nilainya", "nilaimu")
+    
+    st.markdown(f"**{fname}** — {pertanyaan}")
     labels = [o[1] for o in cfg["o"]]
     vals = [float(o[0]) for o in cfg["o"]]
     default_idx = min(range(len(vals)), key=lambda i: abs(vals[i] - BASELINE_ASPEK[fname]))
@@ -317,7 +323,7 @@ def halaman_login():
                     if reg_user in users: st.error("Username sudah dipakai.")
                     elif len(reg_pw) < 6: st.error("Password minimal 6 karakter.")
                     else:
-                        users[reg_user] = {"password": hash_password(reg_pw), "nama": reg_nama, "role": "guru", "status": "pending", "created": datetime.now().strftime("%Y-%m-%d %H:%M")}
+                        users[reg_user] = {"password": hash_password(reg_pw), "nama": reg_nama, "role": "guru", "status": "pending", "created": get_wib_time().strftime("%Y-%m-%d %H:%M")}
                         save_users(users)
                         st.success("Pendaftaran berhasil! Menunggu persetujuan Admin.")
 
@@ -531,7 +537,6 @@ if st.session_state.current_page == "home":
             </div>
             ''', unsafe_allow_html=True)
             
-            # PERBAIKAN KEY UNIK AGAR TOMBOL BERFUNGSI
             if st.button(f"Buka {title}", key=f"home_btn_{page}", use_container_width=True):
                 goto_page(page)
 
@@ -775,7 +780,7 @@ elif st.session_state.current_page == "analisis":
                     n = float(row["Nilai Rapor"])
                     kat, _ = kategori_nilai(n)
                     insert_siswa({
-                        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "Timestamp": get_wib_time().strftime("%Y-%m-%d %H:%M"),
                         "Nama": str(row["Nama Siswa"]).strip(), "Kelas": str(row["Kelas"]).strip(),
                         "Absen": int(row["Absen"]), "Nilai Akademik": n, "Kategori": kat,
                         "Self-Efficacy": 0.0, "Keterlibatan Ortu": 0.0, "Harapan Ortu": 0.0,
@@ -798,19 +803,20 @@ elif st.session_state.current_page == "analisis":
             m_nilai = st.number_input("Nilai Rapor", 60.0, 100.0, 83.78)
             
             st.markdown("---")
-            f1 = input_kategori("m_s1", "Self-Efficacy Akademik")
-            f2 = input_kategori("m_s2", "Motivasi Belajar")
-            f3 = input_kategori("m_s3", "Kecemasan Akademik")
-            f4 = input_kategori("m_s4", "Kemalasan Belajar")
-            f5 = input_kategori("m_s5", "Keterlibatan Orang Tua")
-            f6 = input_kategori("m_s6", "Harapan Orang Tua")
-            f7 = input_kategori("m_s7", "Dukungan Sekolah")
-            f8 = input_kategori("m_s8", "Fasilitas Sekolah")
+            # Memanggil input_kategori dengan is_student=False agar teks kuesioner untuk guru
+            f1 = input_kategori("m_s1", "Self-Efficacy Akademik", False)
+            f2 = input_kategori("m_s2", "Motivasi Belajar", False)
+            f3 = input_kategori("m_s3", "Kecemasan Akademik", False)
+            f4 = input_kategori("m_s4", "Kemalasan Belajar", False)
+            f5 = input_kategori("m_s5", "Keterlibatan Orang Tua", False)
+            f6 = input_kategori("m_s6", "Harapan Orang Tua", False)
+            f7 = input_kategori("m_s7", "Dukungan Sekolah", False)
+            f8 = input_kategori("m_s8", "Fasilitas Sekolah", False)
             
             if st.form_submit_button("Simpan Siswa Ini"):
                 kat, _ = kategori_nilai(m_nilai)
                 insert_siswa({
-                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "Timestamp": get_wib_time().strftime("%Y-%m-%d %H:%M"),
                     "Nama": m_nama, "Kelas": m_kelas, "Absen": m_absen,
                     "Nilai Akademik": m_nilai, "Kategori": kat,
                     "Self-Efficacy": f1, "Keterlibatan Ortu": f5, "Harapan Ortu": f6,
@@ -994,23 +1000,30 @@ elif st.session_state.current_page == "rekomendasi":
             for s in saran_siswa[:2]: doc.add_paragraph(s, style='List Bullet 2')
         doc.add_paragraph()
         ttd_table = doc.add_table(rows=2, cols=2); ttd_table.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        ttd_table.rows[0].cells[0].text = 'Guru / Konselor,'; ttd_table.rows[0].cells[1].text = f"Salatiga, {datetime.now().strftime('%d %B %Y')}"
+        ttd_table.rows[0].cells[0].text = 'Guru / Konselor,'; ttd_table.rows[0].cells[1].text = f"Salatiga, {get_wib_time().strftime('%d %B %Y')}"
         ttd_table.rows[1].cells[0].text = '\n\n\n\n(_______________________)'; ttd_table.rows[1].cells[1].text = f'\n\n\n\n( {st.session_state.user_nama} )'
         buffer = io.BytesIO(); doc.save(buffer); buffer.seek(0)
         return buffer
 
+    # PERBAIKAN FUNGSI PDF: Menggunakan font standar dan output yang aman
     def buat_dokumen_pdf(siswa_data):
         from fpdf import FPDF
         pdf = FPDF(); pdf.add_page()
         pdf.set_font("Arial", 'B', 16); pdf.cell(0, 10, 'LAPORAN PERKEMBANGAN SISWA', ln=True, align='C')
         pdf.set_font("Arial", 'I', 10); pdf.cell(0, 10, 'Smart Academic Analytics (SAA) - SMPN 6 Salatiga', ln=True, align='C'); pdf.ln(10)
+        
+        # Tabel Info
         pdf.set_font("Arial", 'B', 11); pdf.cell(40, 8, 'Nama Siswa', border=1); pdf.set_font("Arial", '', 11); pdf.cell(0, 8, siswa_data['nama'], border=1, ln=True)
         pdf.set_font("Arial", 'B', 11); pdf.cell(40, 8, 'Kelas / Absen', border=1); pdf.set_font("Arial", '', 11); pdf.cell(0, 8, f"{siswa_data['kelas']} / {siswa_data['absen']}", border=1, ln=True)
         pdf.set_font("Arial", 'B', 11); pdf.cell(40, 8, 'Nilai Rata-rata', border=1); pdf.set_font("Arial", '', 11); pdf.cell(0, 8, f"{siswa_data['nilai']:.2f}", border=1, ln=True)
         pdf.set_font("Arial", 'B', 11); pdf.cell(40, 8, 'Kategori', border=1); pdf.set_font("Arial", '', 11); pdf.cell(0, 8, siswa_data['kategori'], border=1, ln=True); pdf.ln(10)
+        
+        # Ringkasan
         pdf.set_font("Arial", 'B', 12); pdf.cell(0, 8, 'Ringkasan Kondisi', ln=True)
         pdf.set_font("Arial", '', 11); posisi_teks = "di atas" if siswa_data['selisih'] >= 0 else "di bawah"
         pdf.multi_cell(0, 6, f"Saat ini, {siswa_data['nama']} memiliki nilai rata-rata {siswa_data['nilai']:.2f}, yang berada {abs(siswa_data['selisih']):.2f} poin {posisi_teks} rata-rata sekolah."); pdf.ln(5)
+        
+        # Catatan
         pdf.set_font("Arial", 'B', 12); pdf.cell(0, 8, 'Catatan untuk Orang Tua & Guru', ln=True); pdf.set_font("Arial", '', 11)
         if siswa_data['fp'] is not None:
             pdf.multi_cell(0, 6, f"KEKUATAN UTAMA: {siswa_data['nama']} menunjukkan sikap yang sangat baik pada aspek {siswa_data['fp']['Aspek']}."); pdf.ln(2)
@@ -1018,14 +1031,17 @@ elif st.session_state.current_page == "rekomendasi":
             pdf.multi_cell(0, 6, f"AREA YANG PERLU DIDAMPINGI: Fokus pada aspek {siswa_data['fn']['Aspek']}."); pdf.ln(2)
             saran_guru = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("guru", ["Berikan pendampingan ekstra."])
             saran_siswa = siswa_data['tindak'].get(siswa_data['fn']['Aspek'], {}).get("siswa", ["Belajar lebih giat lagi."])
+            
             pdf.set_font("Arial", 'B', 11); pdf.cell(0, 6, 'Saran untuk Guru/Sekolah:', ln=True); pdf.set_font("Arial", '', 11)
             for s in saran_guru[:3]: pdf.multi_cell(0, 6, f"- {s}")
             pdf.set_font("Arial", 'B', 11); pdf.cell(0, 6, 'Saran untuk Siswa/Orang Tua di Rumah:', ln=True); pdf.set_font("Arial", '', 11)
             for s in saran_siswa[:2]: pdf.multi_cell(0, 6, f"- {s}")
-        pdf.ln(15); pdf.cell(100, 8, 'Guru / Konselor,', ln=False); pdf.cell(0, 8, f"Salatiga, {datetime.now().strftime('%d %B %Y')}", ln=True)
+            
+        pdf.ln(15); pdf.cell(100, 8, 'Guru / Konselor,', ln=False); pdf.cell(0, 8, f"Salatiga, {get_wib_time().strftime('%d %B %Y')}", ln=True)
         pdf.ln(15); pdf.cell(100, 8, '(_______________________)', ln=False); pdf.cell(0, 8, f"( {st.session_state.user_nama} )", ln=True)
-        pdf_output = pdf.output(dest='S').encode('latin-1')
-        return io.BytesIO(pdf_output)
+        
+        # Output PDF yang aman untuk Streamlit
+        return io.BytesIO(pdf.output(dest='S').encode('latin-1'))
 
     data_laporan = {'nama': nama, 'kelas': kelas, 'absen': absen, 'nilai': nilai, 'kategori': kategori, 'selisih': selisih, 'fp': fp, 'fn': fn, 'tindak': TINDAK}
 
