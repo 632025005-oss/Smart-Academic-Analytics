@@ -11,7 +11,7 @@ import zipfile
 import base64
 from openpyxl import Workbook
 from streamlit_option_menu import option_menu
-import pytz  # <--- TAMBAHAN UNTUK WAKTU WIB
+import pytz
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -27,7 +27,6 @@ SUPER_ADMIN = {"admin", "regina"}
 # HELPER & AUTH
 # ================================================================
 def get_wib_time():
-    """Fungsi untuk mendapatkan waktu WIB (UTC+7)"""
     tz = pytz.timezone('Asia/Jakarta')
     return datetime.now(tz)
 
@@ -91,12 +90,10 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* Logo Sidebar */
 .sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
 .sb-logo-icon { display: flex; align-items: center; justify-content: center; }
 .sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
-/* Quote & Ilustrasi */
 .sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
 .sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
 .sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
@@ -267,7 +264,6 @@ def kategori_nilai(n):
 
 def input_kategori(key, fname, is_student=False):
     cfg = SKALA_PILIHAN[fname]
-    # Jika dipanggil dari form siswa, ubah kata "siswa" menjadi "kamu"
     pertanyaan = cfg['q'] if not is_student else cfg['q'].replace("siswa", "kamu").replace("nya", "mu").replace("belajarnya", "belajarmu").replace("nilainya", "nilaimu")
     
     st.markdown(f"**{fname}** — {pertanyaan}")
@@ -803,7 +799,6 @@ elif st.session_state.current_page == "analisis":
             m_nilai = st.number_input("Nilai Rapor", 60.0, 100.0, 83.78)
             
             st.markdown("---")
-            # Memanggil input_kategori dengan is_student=False agar teks kuesioner untuk guru
             f1 = input_kategori("m_s1", "Self-Efficacy Akademik", False)
             f2 = input_kategori("m_s2", "Motivasi Belajar", False)
             f3 = input_kategori("m_s3", "Kecemasan Akademik", False)
@@ -1005,8 +1000,7 @@ elif st.session_state.current_page == "rekomendasi":
         buffer = io.BytesIO(); doc.save(buffer); buffer.seek(0)
         return buffer
 
-    # PERBAIKAN FUNGSI PDF: Menggunakan font standar dan output yang aman
-       def buat_dokumen_pdf(siswa_data):
+    def buat_dokumen_pdf(siswa_data):
         from fpdf import FPDF
         pdf = FPDF(); pdf.add_page()
         pdf.set_font("Arial", 'B', 16); pdf.cell(0, 10, 'LAPORAN PERKEMBANGAN SISWA', ln=True, align='C')
