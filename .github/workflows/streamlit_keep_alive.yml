@@ -1,0 +1,24 @@
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # Runs every 12 hours (Adjust cron schedule as needed)
+    - cron: '0 */12 * * *'
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-python: '3.11'
+
+      - name: Install streamlit-wakeup
+        run: pip install streamlit-wakeup
+
+      - name: Wake up application
+        run: |
+          # Replace with your actual Streamlit App URL
+          streamlit-wakeup https://saanalytics.streamlit.app/
