@@ -11,3 +11,4 @@ certifi>=2024.0.0
 python-docx-ng
 fpdf2
 plotly
+streamlit-option-menu
