@@ -405,10 +405,18 @@ with st.sidebar:
         icons=menu_icons,
         default_index=default_idx,
         styles={
-            "container": {"padding": "0!important", "background-color": "transparent"},
+            "container": {"padding": "0!important", "background-color": "transparent !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
-            "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#005f57", "color": "white", "font-weight": "600"},
-            "nav-link-selected": {"background-color": "#004d45", "color": "white", "font-weight": "700"},
+            "nav-link": {
+                "font-size": "15px", 
+                "text-align": "left", 
+                "margin": "0px", 
+                "--hover-color": "#005f57", 
+                "color": "white !important", 
+                "font-weight": "600", 
+                "background-color": "transparent !important"  # <--- KUNCI PERBAIKANNYA DI SINI
+            },
+            "nav-link-selected": {"background-color": "#004d45", "color": "white !important", "font-weight": "700"},
         }
     )
 
