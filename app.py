@@ -8,9 +8,8 @@ from datetime import datetime
 import hashlib
 import io
 import zipfile
-import base64
 from openpyxl import Workbook
-from streamlit_option_menu import option_menu
+from streamlit_option_menu import option_menu  # Library Ikon
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -59,131 +58,84 @@ st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", 
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 :root {
-    --teal: #0D9488; --teal-dark: #0F766E; --gold: #F59E0B;
+    --primary: #0D9488; --primary-dark: #0F766E; --gold: #F59E0B;
     --bg: #F4F7F6; --text-main: #1E293B; --text-muted: #64748B; --card-bg: #FFFFFF;
 }
 
 html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--text-main); }
 .stApp { background-color: var(--bg); }
-.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
+.block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 1400px; }
+#MainMenu, footer, header { visibility: hidden; }
 
-#MainMenu, footer { visibility: hidden; }
-
-/* =========================================
-   DESAIN SIDEBAR & MENU
-   ========================================= */
-[data-testid="stSidebar"] {
-    background-color: #006B62 !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,60 Q30,90 60,60 T100,60 L100,100 L0,100 Z" fill="%23004d45"/></svg>') !important;
-    background-repeat: no-repeat !important;
-    background-position: bottom !important;
-    background-size: 100% 300px !important;
-    border-right: none;
-}
+/* SIDEBAR */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D9488 0%, #0F766E 100%); border-right: none; }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* Logo Sidebar */
-.sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
-.sb-logo-icon { display: flex; align-items: center; justify-content: center; }
-.sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
-
-/* Quote & Ilustrasi */
-.sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
-.sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
-.sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
-
-/* =========================================
-   DESAIN KONTEN UTAMA
-   ========================================= */
-.top-header {
-    display: flex; justify-content: space-between; align-items: center;
-    background: white; padding: 1.5rem 2rem; border-radius: 16px;
-    margin-bottom: 1.5rem; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.05);
-    border: 1px solid #E2E8F0;
+/* FIX KOTAK PUTIH PADA OPTION_MENU */
+[data-testid="stSidebar"] ul.nav-pills {
+    background-color: transparent !important;
 }
-.top-header h1 { margin: 0; font-size: 1.6rem; font-weight: 900; color: var(--teal-dark); }
-.top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link {
+    background-color: transparent !important;
+    color: white !important;
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
+    background-color: rgba(255,255,255,0.2) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
 
+/* KARTU KPI */
 .kpi-card {
-    background: white; border-radius: 16px; padding: 1.2rem;
+    background: var(--card-bg); border-radius: 12px; padding: 1.2rem;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center;
     gap: 1rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;
 }
 .kpi-icon {
-    width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+    width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
 }
-.kpi-icon.blue { background: #E0F2FE; color: #0284C7; }
 .kpi-icon.green { background: #DCFCE7; color: #16A34A; }
 .kpi-icon.orange { background: #FEF3C7; color: #D97706; }
 .kpi-icon.purple { background: #F3E8FF; color: #9333EA; }
+.kpi-info h4 { margin: 0; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;}
+.kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 800; line-height: 1.2;}
+.kpi-info p { margin: 0; font-size: 0.7rem; color: var(--text-muted); }
 
-.kpi-info h4 { margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
-.kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 900; line-height: 1.2;}
-.kpi-info p { margin: 0; font-size: 0.7rem; color: var(--text-muted); font-weight: 600;}
-
+/* KARTU MODUL */
 .module-card {
     background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid #E2E8F0;
-    transition: all 0.3s ease; min-height: 110px; margin-bottom: 0.5rem;
+    transition: all 0.3s ease; min-height: 130px; margin-bottom: 0.5rem;
     display: flex; flex-direction: column; justify-content: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
-.module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.1); border-color: var(--teal); }
+.module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.1); border-color: #0D9488; }
 .module-icon { font-size: 1.8rem; margin-bottom: 0.5rem;}
 .module-title { font-weight: 800; font-size: 1rem; color: #1E293B; margin-bottom: 0.2rem;}
 .module-desc { font-size: 0.75rem; color: #64748B; line-height: 1.4;}
 
-.stButton > button { background: var(--teal); color: white; border-radius: 8px; font-weight: 800; width: 100%; border: none; padding: 0.5rem;}
-.stButton > button:hover { background: var(--teal-dark); color: white; border: none;}
+/* HEADER */
+.top-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; padding: 1.5rem 2rem; border-radius: 16px;
+    margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+.top-header h1 { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); }
+.top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+
+/* TOMBOL */
+.stButton > button { background: var(--primary); color: white; border-radius: 8px; font-weight: 700; width: 100%; border: none;}
+.stButton > button:hover { background: var(--primary-dark); color: white; border: none;}
+
+/* TABS */
+.stTabs [data-baseweb="tab-list"] { gap: 1rem; border-bottom: 2px solid #E2E8F0; }
+.stTabs [data-baseweb="tab"] { font-weight: 700; color: var(--text-muted); padding-bottom: 10px;}
+.stTabs [aria-selected="true"] { color: var(--primary) !important; border-bottom: 3px solid var(--primary) !important; }
+
+/* TABLE */
 .stDataFrame { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-
-/* =========================================
-   MEDIA QUERIES (RESPONSIVE DESIGN)
-   ========================================= */
-@media (min-width: 769px) {
-    header { visibility: hidden; }
-    [data-testid="collapsedControl"] { display: none; } 
-    [data-testid="stSidebar"] {
-        min-width: 280px !important; max-width: 280px !important;
-        transform: translateX(0) !important; visibility: visible !important;
-    }
-}
-
-@media (max-width: 768px) {
-    header { visibility: visible !important; background-color: transparent !important; }
-    [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; color: #0D9488 !important; }
-    [data-testid="stSidebar"] { min-width: 250px !important; max-width: 250px !important; }
-    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
-    
-    .top-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem; }
-    .top-header h1 { font-size: 1.3rem; }
-    .top-header h2 { font-size: 1.2rem; }
-
-    .kpi-card { padding: 1rem; gap: 0.8rem; }
-    .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
-    .kpi-info h2 { font-size: 1.5rem; }
-    .module-card { padding: 1rem; min-height: auto; }
-}
-
-/* =========================================
-   FIX TOTAL: BACKGROUND MENU JADI HIJAU GELAP
-   ========================================= */
-.stCustomComponentV1 {
-    background-color: transparent !important;
-}
-[data-testid="stSidebar"] ul.nav-pills {
-    background-color: #006B62 !important;
-}
-[data-testid="stSidebar"] ul.nav-pills a.nav-link {
-    background-color: #006B62 !important;
-    color: white !important;
-}
-[data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
-    background-color: #004d45 !important;
-    color: white !important;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -273,8 +225,8 @@ def input_kategori(key, fname, is_student=False):
 def halaman_login():
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("<br><br><h1 style='text-align:center; color:#0D9488; font-weight:900;'>🎓 SAA Analytics</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:#64748B; font-weight:600;'>Silakan masuk untuk mengakses dashboard</p>", unsafe_allow_html=True)
+        st.markdown("<br><br><h1 style='text-align:center; color:#0D9488;'>🎓 SAA Analytics</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:#64748B;'>Silakan masuk untuk mengakses dashboard</p>", unsafe_allow_html=True)
         
         tab_login, tab_daftar, tab_siswa = st.tabs(["🔐 Masuk", "📝 Daftar Akun", "🎒 Kuesioner Siswa"])
 
@@ -292,6 +244,11 @@ def halaman_login():
                             st.session_state.logged_in = True
                             st.session_state.user_nama = users[username]["nama"]
                             st.session_state.user_role = users[username]["role"]
+                            
+                            # PERBAIKAN BUG LOGIN
+                            st.session_state.current_page = "home"
+                            if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
+                            
                             reload_data()
                             add_log("Login", username)
                             st.rerun()
@@ -356,50 +313,29 @@ if not st.session_state.logged_in:
     st.stop()
 
 with st.sidebar:
-    def get_base64_image(image_path):
-        try:
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode()
-        except FileNotFoundError:
-            return ""
-
-    logo_b64 = get_base64_image("logo_sekolah.png")
+    st.markdown(f"<h2 style='text-align:center; margin-bottom:0;'>Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; font-size:0.8rem; opacity:0.8;'>Sistem Pendukung Keputusan</p>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    if logo_b64:
-        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="width: 45px; height: 45px; object-fit: contain; background-color: white; border-radius: 8px; padding: 2px;">'
-    else:
-        logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
-
-    st.markdown(f"""
-    <div class="sb-logo">
-        <div class="sb-logo-icon">
-            {logo_html}
-        </div>
-        <div class="sb-logo-text">
-            <h2>SAA.Analytics</h2>
-        </div>
-    </div>
-    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
-    """, unsafe_allow_html=True)
-
-    menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Prediksi", "Laporan", "Tentang"]
-    menu_icons = ["house-door", "pencil-square", "people", "search", "graph-up-arrow", "file-earmark-text", "info-circle"]
+    # KONFIGURASI MENU MODERN
+    menu_options = ["Beranda", "Data Siswa", "Analisis Faktor", "Rekomendasi & Laporan", "Pengaturan", "Tentang Sistem"]
+    menu_icons = ["house-door", "people", "diagram-3", "lightbulb", "gear", "info-circle"]
     
     if st.session_state.user_role == "admin":
-        menu_options.append("Pengaturan Admin")
-        menu_icons.append("gear")
-        menu_options.append("Logout")
-        menu_icons.append("box-arrow-right")
-    else:
-        menu_options.append("Pengaturan")
-        menu_icons.append("gear")
-        menu_options.append("Logout")
-        menu_icons.append("box-arrow-right")
+        menu_options.append("Manajemen Pengguna")
+        menu_icons.append("person-gear")
+        
+    menu_options.append("Logout")
+    menu_icons.append("box-arrow-right")
 
     mapping_menu = {
-        "Beranda": "home", "Input & Upload": "analisis", "Data Siswa": "monitoring", 
-        "Pengaruh Faktor": "kausal", "Prediksi": "prediksi", "Laporan": "rekomendasi", 
-        "Tentang": "tentang", "Pengaturan": "pengaturan", "Pengaturan Admin": "admin_users"
+        "Beranda": "home", 
+        "Data Siswa": "monitoring", 
+        "Analisis Faktor": "kausal", 
+        "Rekomendasi & Laporan": "rekomendasi", 
+        "Pengaturan": "pengaturan", 
+        "Tentang Sistem": "tentang", 
+        "Manajemen Pengguna": "admin_users"
     }
     
     current_page_name = "Beranda"
@@ -410,7 +346,6 @@ with st.sidebar:
             
     default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    # PERBAIKAN: Background container dibuat hijau gelap, bukan transparan
     menu_choice = option_menu(
         menu_title=None,
         options=menu_options,
@@ -418,19 +353,19 @@ with st.sidebar:
         default_index=default_idx,
         key="sidebar_menu",
         styles={
-            "container": {"padding": "0!important", "background-color": "#006B62 !important"},
+            "container": {"padding": "0!important", "background-color": "transparent !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
             "nav-link": {
                 "font-size": "15px", 
                 "text-align": "left", 
                 "margin": "0px", 
-                "--hover-color": "#005f57", 
+                "--hover-color": "rgba(255,255,255,0.15)", 
                 "color": "white !important", 
                 "font-weight": "600", 
-                "background-color": "#006B62 !important"
+                "background-color": "transparent !important"
             },
             "nav-link-selected": {
-                "background-color": "#004d45 !important", 
+                "background-color": "rgba(255,255,255,0.2) !important", 
                 "color": "white !important", 
                 "font-weight": "700"
             },
@@ -441,20 +376,21 @@ with st.sidebar:
         add_log("Logout")
         st.session_state.logged_in = False
         st.session_state.user_nama = None
+        
+        # PERBAIKAN BUG LOGOUT
+        st.session_state.user_role = None
+        st.session_state.current_page = "home"
+        if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
+        
         st.rerun()
     else:
         new_page = mapping_menu.get(menu_choice)
         if new_page and st.session_state.current_page != new_page:
             st.session_state.current_page = new_page
             st.rerun()
-
-    st.markdown("""
-    <div class="sb-bottom">
-        <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
-        <img src="https://cdn-icons-png.flaticon.com/512/3145/3145765.png" class="sb-img" style="filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5));">
-    </div>
-    """, unsafe_allow_html=True)
-
+        
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:0.7rem;'>© 2026 SAA Analytics<br>Regina Ria Aurellia</p>", unsafe_allow_html=True)
 
 # ================================================================
 # HALAMAN BERANDA
@@ -463,28 +399,30 @@ if st.session_state.current_page == "home":
     st.markdown(f"""
     <div class="top-header">
         <div>
-            <h1>👋 Halo, Selamat Datang {st.session_state.user_nama}!</h1>
-            <p>Daftar lengkap informasi dan data analisis prestasi akademik Anda.</p>
+            <h1>👋 Halo, {st.session_state.user_nama}!</h1>
+            <p>Selamat datang kembali. Berikut ringkasan data akademik Anda hari ini.</p>
         </div>
-        <div><h2 style="color:#0D9488; margin:0; font-weight:900;">SMPN 6 Salatiga 🏫</h2></div>
+        <div><h3 style="color:#0D9488; margin:0;">SMPN 6 Salatiga 🏫</h3></div>
     </div>
     """, unsafe_allow_html=True)
     
     df = pd.DataFrame(st.session_state.database_siswa)
     
+    # KPI Cards
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f'<div class="kpi-card"><div class="kpi-icon green">👥</div><div class="kpi-info"><h4>Jumlah Siswa</h4><h2>{len(df)}</h2><p>Siswa yang sudah didata</p></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-icon green">👥</div><div class="kpi-info"><h4>Jumlah Siswa</h4><h2>{len(df)}</h2><p>Siswa terdaftar</p></div></div>', unsafe_allow_html=True)
     with c2:
         avg = df['Nilai Akademik'].mean() if not df.empty else 0
-        st.markdown(f'<div class="kpi-card"><div class="kpi-icon blue">📈</div><div class="kpi-info"><h4>Rata-rata Nilai</h4><h2>{avg:.2f}</h2><p>Nilai rata-rata keseluruhan</p></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-icon orange">📈</div><div class="kpi-info"><h4>Rata-rata Nilai</h4><h2>{avg:.2f}</h2><p>Nilai rata-rata kelas</p></div></div>', unsafe_allow_html=True)
     with c3:
         max_val = df['Nilai Akademik'].max() if not df.empty else 0
-        st.markdown(f'<div class="kpi-card"><div class="kpi-icon orange">🏆</div><div class="kpi-info"><h4>Nilai Tertinggi</h4><h2>{max_val:.2f}</h2><p>Skor tertinggi yang dicapai</p></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-icon purple">🏆</div><div class="kpi-info"><h4>Nilai Tertinggi</h4><h2>{max_val:.2f}</h2><p>Skor maksimal</p></div></div>', unsafe_allow_html=True)
     with c4:
         min_val = df['Nilai Akademik'].min() if not df.empty else 0
-        st.markdown(f'<div class="kpi-card"><div class="kpi-icon purple">📉</div><div class="kpi-info"><h4>Nilai Terendah</h4><h2>{min_val:.2f}</h2><p>Skor terendah yang dicapai</p></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-icon">📉</div><div class="kpi-info"><h4>Nilai Terendah</h4><h2>{min_val:.2f}</h2><p>Skor minimal</p></div></div>', unsafe_allow_html=True)
 
+    # Progress Bar Kuesioner (Hanya untuk Guru)
     if st.session_state.user_role != "admin" and not df.empty:
         total_siswa = len(df)
         sudah_isi = len(df[df["Self-Efficacy"] > 0])
@@ -493,13 +431,14 @@ if st.session_state.current_page == "home":
         st.progress(persentase)
         st.write(f"**{sudah_isi}** dari **{total_siswa}** siswa telah mengisi kuesioner.")
 
-    st.markdown("<br><hr>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.markdown("### Modul Navigasi")
+    # --- MENU MODUL DI HALAMAN UTAMA ---
+    st.markdown("### Modul Anda")
     mods = [
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
-        ("🔍", "Pengaruh Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
+        ("🔬", "Analisis Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
         ("💡", "Rekomendasi", "Saran tindak lanjut & laporan.", "rekomendasi"),
         ("⚙️", "Pengaturan", "Ubah password & profil.", "pengaturan"),
         ("ℹ️", "Tentang", "Info metode Hybrid Causal-Explainable.", "tentang")
@@ -520,139 +459,44 @@ if st.session_state.current_page == "home":
             ''', unsafe_allow_html=True)
             if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
                 goto_page(page)
+                
+    st.markdown("<br><hr>", unsafe_allow_html=True)
 
-# ================================================================
-# MODUL 03: PENGARUH FAKTOR (GABUNGAN KAUSAL & SHAP)
-# ================================================================
-elif st.session_state.current_page == "kausal":
-    st.title("🔍 Pengaruh Faktor terhadap Nilai")
-    st.write("Halaman ini menjelaskan faktor apa saja yang mempengaruhi nilai siswa, baik dari segi **sebab-akibat** (faktor yang jika diperbaiki bisa menaikkan nilai) maupun dari segi **prediksi** (faktor yang paling sering digunakan sistem untuk menebak nilai).")
-
-    tab_sekolah, tab_siswa = st.tabs(["🏫 Gambaran Umum Sekolah", "👤 Analisis Per Siswa"])
-
-    with tab_sekolah:
-        st.markdown("### 1. Faktor yang Jika Diperbaiki Bisa Menaikkan Nilai (Dampak Sebab-Akibat)")
-        st.info("Grafik ini menunjukkan besarnya dampak (dalam poin nilai) jika suatu faktor ditingkatkan. Batang hijau (ke kanan) berarti menaikkan nilai, batang merah (ke kiri) berarti menurunkan nilai.")
-        
-        df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Dampak (Poin)": list(PENGARUH_DATA.values())}).sort_values("Dampak (Poin)")
-        
-        fig1 = px.bar(df_ate, x="Dampak (Poin)", y="Faktor", orientation='h', 
-                      color="Dampak (Poin)", color_continuous_scale="RdBu",
-                      labels={"Dampak (Poin)": "Dampak terhadap Nilai"})
-        fig1.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
-        st.plotly_chart(fig1, use_container_width=True)
-
-        st.markdown("### 2. Faktor yang Paling Sering Dipakai untuk Memprediksi Nilai (Tingkat Kepentingan)")
-        st.info("Grafik ini menunjukkan seberapa sering sistem komputer menggunakan faktor tersebut untuk memprediksi nilai siswa. Semakin panjang batangnya, semakin penting faktor tersebut dalam prediksi.")
-        
-        df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Tingkat Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Tingkat Kepentingan")
-        
-        fig2 = px.bar(df_shap, x="Tingkat Kepentingan", y="Faktor", orientation='h', 
-                      color_discrete_sequence=['#0D9488'],
-                      labels={"Tingkat Kepentingan": "Skor Kepentingan"})
-        fig2.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
-        st.plotly_chart(fig2, use_container_width=True)
-
-        st.markdown("### 💡 Kesimpulan untuk Guru")
-        st.success("Berdasarkan analisis di atas, **Self-Efficacy Akademik** dan **Keterlibatan Orang Tua** adalah dua faktor paling kuat yang bisa menaikkan nilai siswa sekaligus paling penting dalam memprediksi nilai. Fokuskan intervensi sekolah pada dua aspek ini.")
-
-    with tab_siswa:
-        st.markdown("### Analisis Profil Siswa Spesifik")
-        df_all = pd.DataFrame(st.session_state.database_siswa)
-        if df_all.empty:
-            st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
-            st.stop()
-            
-        df_siswa = df_all[df_all["Self-Efficacy"] > 0]
-        if df_siswa.empty:
-            st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
-            st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
-            st.stop()
-
-        opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
-        siswa_terpilih = st.selectbox("Pilih Siswa untuk Dianalisis", opsi_siswa)
-        idx = opsi_siswa.index(siswa_terpilih)
-        b = df_siswa.iloc[idx]
-
-        nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
-        profil = {
-            "Self-Efficacy Akademik": float(b["Self-Efficacy"]), "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
-            "Harapan Orang Tua": float(b["Harapan Ortu"]), "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
-            "Motivasi Belajar": float(b["Motivasi"]), "Kecemasan Akademik": float(b["Kecemasan"]),
-            "Fasilitas Sekolah": float(b["Fasilitas"]), "Kemalasan Belajar": float(b["Kemalasan"]),
-        }
-
-        selisih, kontribusi = analisis_kausal(nilai, profil)
-
-        st.markdown(f"#### Profil Analisis: **{nama}**")
-        st.info(f"Nilai Rata-rata: **{nilai:.2f}** | Posisi vs Rata-rata Sekolah: **{selisih:+.2f} poin**")
-
-        df_k = pd.DataFrame([
-            {"Faktor": k, "Nilai Siswa": profil[k], "Rata-rata Sekolah": BASELINE_ASPEK[k],
-             "Selisih": profil[k] - BASELINE_ASPEK[k], "Dampak (Poin)": v}
-            for k, v in kontribusi.items()
-        ]).sort_values("Dampak (Poin)")
-
-        st.markdown("**Radar Chart: Perbandingan Profil Siswa vs Rata-rata Sekolah**")
-        df_radar = pd.DataFrame({"Faktor": list(profil.keys()), "Nilai Siswa": list(profil.values()), "Rata-rata Sekolah": [BASELINE_ASPEK[k] for k in profil.keys()]})
-        
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Rata-rata Sekolah"], theta=df_radar["Faktor"], fill='toself', name='Rata-rata Sekolah', line_color='#94A3B8'))
-        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#0D9488'))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
-        st.plotly_chart(fig_radar, use_container_width=True)
-
-        st.markdown("**Grafik Dampak Faktor (Poin)**")
-        fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
-        fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-        st.markdown("**Tabel Detail**")
-        st.dataframe(df_k, use_container_width=True, hide_index=True)
-
-# ================================================================
-# MODUL PREDIKSI (SUDAH ADA ISINYA / MOCKUP UI)
-# ================================================================
-elif st.session_state.current_page == "prediksi":
-    st.title("📈 Prediksi Nilai Siswa")
-    st.write("Halaman ini mensimulasikan prediksi nilai siswa berdasarkan profil 8 faktor. (Catatan: Model Machine Learning asli dapat diintegrasikan di sini).")
+    # TABS GRAFIK
+    tab1, tab2, tab3 = st.tabs(["Overview", "Distribusi Nilai", "Faktor Penyebab"])
     
-    with st.container():
-        st.markdown("### Masukkan Profil Siswa")
-        col1, col2 = st.columns(2)
-        with col1:
-            p_se = st.slider("Self-Efficacy Akademik", 1.0, 5.0, 4.0, 0.1)
-            p_mot = st.slider("Motivasi Belajar", 1.0, 5.0, 3.5, 0.1)
-            p_cem = st.slider("Kecemasan Akademik", 1.0, 5.0, 2.5, 0.1)
-            p_mal = st.slider("Kemalasan Belajar", 1.0, 5.0, 2.0, 0.1)
-        with col2:
-            p_ortu = st.slider("Keterlibatan Orang Tua", 1.0, 5.0, 4.0, 0.1)
-            p_harap = st.slider("Harapan Orang Tua", 1.0, 5.0, 3.5, 0.1)
-            p_sekolah = st.slider("Dukungan Sekolah", 1.0, 5.0, 4.0, 0.1)
-            p_fas = st.slider("Fasilitas Sekolah", 1.0, 5.0, 4.5, 0.1)
+    with tab1:
+        if not df.empty:
+            trend_data = pd.DataFrame({'Bulan': ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'], 'Nilai': [78, 79, 80, 82, avg, avg]})
+            fig = px.line(trend_data, x='Bulan', y='Nilai', markers=True, color_discrete_sequence=['#0D9488'])
+            fig.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Belum ada data untuk ditampilkan.")
             
-        if st.button("🔮 Hitung Prediksi Nilai", type="primary", use_container_width=True):
-            # Simulasi prediksi sederhana berdasarkan bobot (Placeholder logic)
-            base_score = 75.0
-            score = base_score + (p_se * 1.5) + (p_ortu * 1.2) + (p_mot * 1.0) - (p_cem * 0.8) - (p_mal * 1.5) + (p_sekolah * 0.5)
-            score = min(max(score, 60.0), 100.0) # Batasi 60-100
-            
-            kat, warna = kategori_nilai(score)
-            
-            st.markdown(f"""
-            <div style="background:white; border-left:5px solid {warna}; padding:2rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); text-align:center; margin-top:20px;">
-                <h3 style="margin:0; color:#64748B;">Hasil Prediksi Nilai Akademik</h3>
-                <h1 style="font-size:4rem; color:{warna}; margin:10px 0;">{score:.2f}</h1>
-                <h4 style="margin:0; color:{warna};">Kategori: {kat}</h4>
-            </div>
-            """, unsafe_allow_html=True)
-            st.info("💡 *Angka di atas adalah simulasi (Mockup) menggunakan perhitungan linear sederhana. Kamu bisa mengganti bagian logika ini dengan model Random Forest (.pkl) milikmu.*")
+    with tab2:
+        if not df.empty:
+            dist = df['Kategori'].value_counts().reset_index()
+            dist.columns = ['Kategori', 'Jumlah']
+            fig = px.pie(dist, names='Kategori', values='Jumlah', hole=0.5, 
+                         color='Kategori', color_discrete_map={'Sangat Baik':'#10B981', 'Baik':'#3B82F6', 'Cukup':'#F59E0B', 'Perlu Perhatian':'#EF4444', 'Belum Dinilai':'#94A3B8'})
+            fig.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Belum ada data.")
+
+    with tab3:
+        df_ate = pd.DataFrame({"Faktor": list(PENGARUH_DATA.keys()), "Pengaruh": list(PENGARUH_DATA.values())}).sort_values("Pengaruh")
+        fig = px.bar(df_ate, x="Pengaruh", y="Faktor", orientation='h', color="Pengaruh", color_continuous_scale="RdBu")
+        fig.update_layout(height=300, margin=dict(l=0, r=0, t=10, b=0))
+        st.plotly_chart(fig, use_container_width=True)
 
 # ================================================================
 # MODUL ADMIN: MANAJEMEN PENGGUNA
 # ================================================================
 elif st.session_state.current_page == "admin_users":
     st.title("👥 Manajemen Pengguna")
+    
     users = load_users()
     pending_users = {u: d for u, d in users.items() if d.get("status") == "pending"}
     st.markdown(f"### Antrean Persetujuan ({len(pending_users)})")
@@ -741,6 +585,7 @@ elif st.session_state.current_page == "admin_users":
 # ================================================================
 elif st.session_state.current_page == "analisis":
     st.title("📝 Input & Upload Data Nilai")
+    
     tab_manual, tab_excel = st.tabs(["✍️ Input Manual (Satu Siswa)", "📤 Upload Excel (Banyak Siswa)"])
     
     with tab_excel:
@@ -814,6 +659,7 @@ elif st.session_state.current_page == "analisis":
 # ================================================================
 elif st.session_state.current_page == "monitoring":
     st.title("📊 Data Siswa Anda")
+    
     df = pd.DataFrame(st.session_state.database_siswa)
     if df.empty:
         st.warning("Belum ada data siswa. Silakan input atau upload di menu Input & Upload.")
@@ -843,10 +689,71 @@ elif st.session_state.current_page == "monitoring":
                 st.rerun()
 
 # ================================================================
-# MODUL 04: REKOMENDASI & LAPORAN
+# MODUL 03: ANALISIS FAKTOR
+# ================================================================
+elif st.session_state.current_page == "kausal":
+    st.title("🔬 Analisis Faktor Siswa")
+
+    df_all = pd.DataFrame(st.session_state.database_siswa)
+    if df_all.empty:
+        st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
+        st.stop()
+        
+    df_siswa = df_all[df_all["Self-Efficacy"] > 0]
+    if df_siswa.empty:
+        st.warning("⚠️ Belum ada siswa yang mengisi kuesioner.")
+        st.info("Analisis hanya bisa dilakukan untuk siswa yang sudah mengisi kuesioner mandiri di halaman login.")
+        st.stop()
+
+    opsi_siswa = df_siswa.apply(lambda x: f"{x['Nama']} - {x['Kelas']} (Absen {x['Absen']})", axis=1).tolist()
+    siswa_terpilih = st.selectbox("Pilih Siswa untuk Dianalisis", opsi_siswa)
+    idx = opsi_siswa.index(siswa_terpilih)
+    b = df_siswa.iloc[idx]
+
+    nama = b["Nama"]; kelas = b["Kelas"]; absen = int(b["Absen"]); nilai = float(b["Nilai Akademik"])
+    profil = {
+        "Self-Efficacy Akademik": float(b["Self-Efficacy"]), "Keterlibatan Orang Tua": float(b["Keterlibatan Ortu"]),
+        "Harapan Orang Tua": float(b["Harapan Ortu"]), "Dukungan Sekolah": float(b["Dukungan Sekolah"]),
+        "Motivasi Belajar": float(b["Motivasi"]), "Kecemasan Akademik": float(b["Kecemasan"]),
+        "Fasilitas Sekolah": float(b["Fasilitas"]), "Kemalasan Belajar": float(b["Kemalasan"]),
+    }
+
+    selisih, kontribusi = analisis_kausal(nilai, profil)
+
+    st.markdown(f"### Profil Analisis: **{nama}**")
+    st.info(f"Nilai Rata-rata: **{nilai:.2f}** | Posisi vs Rata-rata Sekolah: **{selisih:+.2f} poin**")
+
+    df_k = pd.DataFrame([
+        {"Faktor": k, "Nilai Siswa": profil[k], "Rata-rata Sekolah": BASELINE_ASPEK[k],
+         "Selisih": profil[k] - BASELINE_ASPEK[k], "Dampak (Poin)": v}
+        for k, v in kontribusi.items()
+    ]).sort_values("Dampak (Poin)")
+
+    # Radar Chart
+    st.markdown("**Radar Chart: Perbandingan Profil Siswa vs Rata-rata Sekolah**")
+    df_radar = pd.DataFrame({"Faktor": list(profil.keys()), "Nilai Siswa": list(profil.values()), "Rata-rata Sekolah": [BASELINE_ASPEK[k] for k in profil.keys()]})
+    
+    fig_radar = go.Figure()
+    fig_radar.add_trace(go.Scatterpolar(r=df_radar["Rata-rata Sekolah"], theta=df_radar["Faktor"], fill='toself', name='Rata-rata Sekolah', line_color='#94A3B8'))
+    fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#0D9488'))
+    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
+    st.plotly_chart(fig_radar, use_container_width=True)
+
+    # Bar Chart
+    st.markdown("**Grafik Dampak Faktor (Poin)**")
+    fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
+    fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    st.markdown("**Tabel Detail**")
+    st.dataframe(df_k, use_container_width=True, hide_index=True)
+
+# ================================================================
+# MODUL 04: REKOMENDASI
 # ================================================================
 elif st.session_state.current_page == "rekomendasi":
     st.title("💡 Rekomendasi & Laporan")
+
     df_all = pd.DataFrame(st.session_state.database_siswa)
     if df_all.empty:
         st.warning("Belum ada data siswa. Silakan input data di menu Input & Upload.")
