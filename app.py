@@ -212,8 +212,12 @@ if st.session_state.config is None:
 def add_log(aksi, detail=""):
     tambah_log({"waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user": st.session_state.user_nama or "-", "role": st.session_state.user_role or "-", "aksi": aksi, "detail": detail})
 
+# FUNGSI GOTO_PAGE YANG SUDAH DIPERBAIKI
 def goto_page(page):
     st.session_state.current_page = page
+    # Hapus memori menu sidebar agar sinkron saat ditekan dari beranda
+    if "sidebar_menu" in st.session_state: 
+        del st.session_state["sidebar_menu"]
     st.rerun()
 
 # ================================================================
@@ -293,7 +297,6 @@ def halaman_login():
                             st.session_state.user_nama = users[username]["nama"]
                             st.session_state.user_role = users[username]["role"]
                             
-                            # --- PERBAIKAN BUG LOGIN (HAPUS MEMORI MENU) ---
                             st.session_state.current_page = "home"
                             if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
                             
@@ -387,7 +390,6 @@ with st.sidebar:
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # MENU SIDEBAR DENGAN URUTAN BARU
     menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Laporan", "Prediksi", "Tentang"]
     menu_icons = ["house-door", "pencil-square", "people", "search", "file-earmark-text", "graph-up-arrow", "info-circle"]
     
@@ -510,7 +512,7 @@ if st.session_state.current_page == "home":
         ("📝", "Input & Upload", "Input manual atau upload Excel nilai.", "analisis"),
         ("📊", "Data Siswa", "Lihat & kelola daftar siswa Anda.", "monitoring"),
         ("🔍", "Pengaruh Faktor", "Lihat dampak & prioritas per siswa.", "kausal"),
-        ("💡", "Laporan", "Saran tindak lanjut & laporan.", "rekomendasi"), # <--- DIUBAH JADI LAPORAN
+        ("💡", "Laporan", "Saran tindak lanjut & laporan.", "rekomendasi"),
         ("⚙️", "Pengaturan", "Ubah password & profil.", "pengaturan"),
         ("ℹ️", "Tentang", "Info metode Hybrid Causal-Explainable.", "tentang")
     ]
@@ -528,8 +530,9 @@ if st.session_state.current_page == "home":
                 <div class="module-desc">{desc}</div>
             </div>
             ''', unsafe_allow_html=True)
-            # Tombol ini akan memanggil goto_page(page) yang mengarah ke halaman "rekomendasi"
-            if st.button(f"Buka {title}", key=f"btn_{page}", use_container_width=True):
+            
+            # PERBAIKAN KEY UNIK AGAR TOMBOL BERFUNGSI
+            if st.button(f"Buka {title}", key=f"home_btn_{page}", use_container_width=True):
                 goto_page(page)
 
 # ================================================================
