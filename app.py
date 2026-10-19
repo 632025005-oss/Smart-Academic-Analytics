@@ -10,6 +10,7 @@ import io
 import zipfile
 import base64
 from openpyxl import Workbook
+from streamlit_option_menu import option_menu  # <--- TAMBAHAN BARU
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -90,38 +91,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .sb-logo-icon { display: flex; align-items: center; justify-content: center; }
 .sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
-/* Hilangkan Lingkaran Radio Button & Rapikan Menu */
-[data-testid="stSidebar"] div[role="radiogroup"] > label {
-    padding: 12px 15px !important;
-    border-radius: 10px;
-    background-color: transparent;
-    transition: all 0.2s;
-    border: none !important;
-    margin-bottom: 2px;
-}
-[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-/* Sembunyikan bulatan radio */
-[data-testid="stSidebar"] div[role="radiogroup"] > label > div:first-child {
-    display: none !important;
-}
-/* Teks Menu */
-[data-testid="stSidebar"] div[role="radiogroup"] > label > div:last-child {
-    font-weight: 700;
-    font-size: 0.95rem;
-}
-/* Menu Aktif (Warna Putih) */
-[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"],
-[data-testid="stSidebar"] div[role="radiogroup"] > label[aria-checked="true"] {
-    background-color: white !important;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] *,
-[data-testid="stSidebar"] div[role="radiogroup"] > label[aria-checked="true"] * {
-    color: #006B62 !important;
-}
-
 /* Quote & Ilustrasi */
 .sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
 .sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
@@ -176,7 +145,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 1. Tampilan Desktop (Layar Lebar > 768px) */
 @media (min-width: 769px) {
-    /* Sembunyikan header hanya di desktop */
     header { visibility: hidden; }
     [data-testid="collapsedControl"] { display: none; } 
     [data-testid="stSidebar"] {
@@ -187,41 +155,18 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 
 /* 2. Tampilan Mobile & Tablet (Layar Kecil <= 768px) */
 @media (max-width: 768px) {
-    /* MUNCULKAN HEADER STREAMLIT agar tombol panah/hamburger muncul */
-    header { 
-        visibility: visible !important; 
-        background-color: transparent !important; 
-    }
-    
-    /* Pastikan tombol panah terlihat jelas */
-    [data-testid="collapsedControl"] { 
-        display: flex !important; 
-        visibility: visible !important;
-        color: #0D9488 !important;
-    }
-    
-    /* Biarkan sidebar menjadi mode drawer (bisa digeser buka-tutup) */
-    [data-testid="stSidebar"] {
-        min-width: 250px !important; 
-        max-width: 250px !important;
-    }
-    
-    /* Atur ulang padding konten */
+    header { visibility: visible !important; background-color: transparent !important; }
+    [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; color: #0D9488 !important; }
+    [data-testid="stSidebar"] { min-width: 250px !important; max-width: 250px !important; }
     .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
     
-    /* Ubah layout header menjadi vertikal */
-    .top-header {
-        flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem;
-    }
+    .top-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem; }
     .top-header h1 { font-size: 1.3rem; }
     .top-header h2 { font-size: 1.2rem; }
 
-    /* Perkecil kartu statistik */
     .kpi-card { padding: 1rem; gap: 0.8rem; }
     .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
     .kpi-info h2 { font-size: 1.5rem; }
-    
-    /* Perkecil kartu modul */
     .module-card { padding: 1rem; min-height: auto; }
 }
 </style>
@@ -396,7 +341,6 @@ if not st.session_state.logged_in:
     st.stop()
 
 with st.sidebar:
-    # Membaca gambar logo lokal
     def get_base64_image(image_path):
         try:
             with open(image_path, "rb") as img_file:
@@ -411,42 +355,66 @@ with st.sidebar:
     else:
         logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
 
+    # --- HEADER SIDEBAR BARU (Sesuai Gambar) ---
     st.markdown(f"""
     <div class="sb-logo">
         <div class="sb-logo-icon">
             {logo_html}
         </div>
-        <div class="sb-logo-text">
-            <h2>SAA.Analytics</h2>
+        <div class="sb-logo-text" style="display: flex; flex-direction: column;">
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1;">Dashboard</h2>
+            <div style="font-size: 0.7rem; color: #A7F3D0; line-height: 1.3; font-weight: 600; margin-top: 4px;">Prestasi Akademik Siswa<br>SMP Negeri 6 Salatiga</div>
         </div>
     </div>
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # Navigasi Radio Button
-    menu_options = ["🏠 Beranda", "📝 Input & Upload", "👥 Data Siswa", "🔍 Pengaruh Faktor", "📈 Prediksi", "📋 Laporan", "ℹ️ Tentang"]
+    # --- MENU NAVIGASI BARU (Gunakan Ikon Outline) ---
+    menu_options = ["Beranda", "Data Siswa", "Analisis Causal", "Prediksi", "Penjelasan (SHAP)", "Laporan", "Input & Upload"]
+    menu_icons = ["house-door", "people", "diagram-3", "graph-up-arrow", "lightbulb", "file-earmark-text", "cloud-upload"]
+    
     if st.session_state.user_role == "admin":
-        menu_options.append("⚙️ Pengaturan Admin")
-        menu_options.append("🚪 Logout")
+        menu_options.append("Pengaturan Admin")
+        menu_icons.append("gear")
     else:
-        menu_options.append("⚙️ Pengaturan")
-        menu_options.append("🚪 Logout")
+        menu_options.append("Pengaturan")
+        menu_icons.append("gear")
+        
+    menu_options.append("Logout")
+    menu_icons.append("box-arrow-right")
 
     mapping_menu = {
-        "🏠 Beranda": "home", "📝 Input & Upload": "analisis", "👥 Data Siswa": "monitoring", 
-        "🔍 Pengaruh Faktor": "kausal", "📈 Prediksi": "prediksi", "📋 Laporan": "rekomendasi", 
-        "ℹ️ Tentang": "tentang", "⚙️ Pengaturan": "pengaturan", "⚙️ Pengaturan Admin": "admin_users"
+        "Beranda": "home", "Data Siswa": "monitoring", 
+        "Analisis Causal": "kausal", "Prediksi": "prediksi", 
+        "Penjelasan (SHAP)": "kausal", "Laporan": "rekomendasi", 
+        "Input & Upload": "analisis", "Pengaturan": "pengaturan", 
+        "Pengaturan Admin": "admin_users"
     }
     
-    default_idx = 0
-    for i, m in enumerate(menu_options):
-        if mapping_menu.get(m) == st.session_state.current_page:
-            default_idx = i
+    # Cari index menu yang sedang aktif
+    current_page_name = "Beranda"
+    for k, v in mapping_menu.items():
+        if v == st.session_state.current_page:
+            current_page_name = k
             break
+            
+    default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    menu_choice = st.radio("Menu", menu_options, index=default_idx, label_visibility="collapsed")
+    # Tampilkan Menu dengan Ikon Modern
+    menu_choice = option_menu(
+        menu_title=None,
+        options=menu_options,
+        icons=menu_icons,
+        default_index=default_idx,
+        styles={
+            "container": {"padding": "0!important", "background-color": "transparent"},
+            "icon": {"color": "white", "font-size": "18px"}, 
+            "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#005f57", "color": "white", "font-weight": "600"},
+            "nav-link-selected": {"background-color": "#004d45", "color": "white", "font-weight": "700"},
+        }
+    )
 
-    if menu_choice == "🚪 Logout":
+    if menu_choice == "Logout":
         add_log("Logout")
         st.session_state.logged_in = False
         st.session_state.user_nama = None
@@ -457,7 +425,7 @@ with st.sidebar:
             st.session_state.current_page = new_page
             st.rerun()
 
-    # Quote & Ilustrasi Buku
+    # Quote & Ilustrasi Buku (Tetap dipertahankan)
     st.markdown("""
     <div class="sb-bottom">
         <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
