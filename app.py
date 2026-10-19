@@ -10,7 +10,7 @@ import io
 import zipfile
 import base64
 from openpyxl import Workbook
-from streamlit_option_menu import option_menu  # <--- TAMBAHAN LIBRARY IKON
+from streamlit_option_menu import option_menu  # Library Ikon Modern
 
 from db_storage import (
     load_users as _db_load_users, save_users as _db_save_users,
@@ -168,6 +168,22 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
     .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
     .kpi-info h2 { font-size: 1.5rem; }
     .module-card { padding: 1rem; min-height: auto; }
+}
+
+/* =========================================
+   FIX UNTUK BACKGROUND MENU PUTIH (OPTION_MENU)
+   ========================================= */
+[data-testid="stSidebar"] ul.nav-pills {
+    background-color: transparent !important;
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link {
+    background-color: transparent !important;
+    color: white !important;
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
+    background-color: #004d45 !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -355,7 +371,6 @@ with st.sidebar:
     else:
         logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
 
-    # --- HEADER SIDEBAR (Teks Tetap Asli) ---
     st.markdown(f"""
     <div class="sb-logo">
         <div class="sb-logo-icon">
@@ -368,7 +383,7 @@ with st.sidebar:
     <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
     """, unsafe_allow_html=True)
 
-    # --- MENU NAVIGASI (Hanya Ikon yang Diganti) ---
+    # --- MENU NAVIGASI (Hanya Ikon yang Diganti, Teks Tetap) ---
     menu_options = ["Beranda", "Input & Upload", "Data Siswa", "Pengaruh Faktor", "Prediksi", "Laporan", "Tentang"]
     menu_icons = ["house-door", "pencil-square", "people", "search", "graph-up-arrow", "file-earmark-text", "info-circle"]
     
@@ -389,7 +404,6 @@ with st.sidebar:
         "Tentang": "tentang", "Pengaturan": "pengaturan", "Pengaturan Admin": "admin_users"
     }
     
-    # Cari index menu yang sedang aktif
     current_page_name = "Beranda"
     for k, v in mapping_menu.items():
         if v == st.session_state.current_page:
@@ -398,12 +412,13 @@ with st.sidebar:
             
     default_idx = menu_options.index(current_page_name) if current_page_name in menu_options else 0
 
-    # Tampilkan Menu Modern dengan streamlit_option_menu
+    # TAMPILAN MENU MODERN
     menu_choice = option_menu(
         menu_title=None,
         options=menu_options,
         icons=menu_icons,
         default_index=default_idx,
+        key="sidebar_menu",
         styles={
             "container": {"padding": "0!important", "background-color": "transparent !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
@@ -414,9 +429,13 @@ with st.sidebar:
                 "--hover-color": "#005f57", 
                 "color": "white !important", 
                 "font-weight": "600", 
-                "background-color": "transparent !important"  # <--- KUNCI PERBAIKANNYA DI SINI
+                "background-color": "transparent !important"
             },
-            "nav-link-selected": {"background-color": "#004d45", "color": "white !important", "font-weight": "700"},
+            "nav-link-selected": {
+                "background-color": "#004d45 !important", 
+                "color": "white !important", 
+                "font-weight": "700"
+            },
         }
     )
 
@@ -431,7 +450,6 @@ with st.sidebar:
             st.session_state.current_page = new_page
             st.rerun()
 
-    # Quote & Ilustrasi Buku
     st.markdown("""
     <div class="sb-bottom">
         <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
