@@ -52,7 +52,7 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS (DESAIN SIDEBAR PERSIS GAMBAR)
+# PAGE CONFIG & CSS (RESPONSIVE UNTUK DESKTOP & MOBILE)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
@@ -70,8 +70,9 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
 #MainMenu, footer, header { visibility: hidden; }
 
-/* KUNCI SIDEBAR AGAR SELALU TERBUKA & ESTETIK */
-[data-testid="collapsedControl"] { display: none; } 
+/* =========================================
+   DESAIN SIDEBAR (BASE)
+   ========================================= */
 [data-testid="stSidebar"] {
     background-color: #006B62 !important;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,60 Q30,90 60,60 T100,60 L100,100 L0,100 Z" fill="%23004d45"/></svg>') !important;
@@ -79,19 +80,15 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
     background-position: bottom !important;
     background-size: 100% 300px !important;
     border-right: none;
-    min-width: 280px !important;
-    max-width: 280px !important;
-    transform: translateX(0) !important;
-    visibility: visible !important;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* SIDEBAR LOGO */
+/* Logo Sidebar */
 .sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
 .sb-logo-icon { display: flex; align-items: center; justify-content: center; }
 .sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
 
-/* NAVIGASI RADIO BUTTON (Menu Putih saat Aktif) */
+/* Navigasi Radio Button */
 [data-testid="stSidebar"] .stRadio > div { gap: 0.2rem; padding: 0 15px;}
 [data-testid="stSidebar"] .stRadio label {
     display: flex; align-items: center; padding: 10px 15px;
@@ -105,12 +102,14 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-/* SIDEBAR BOTTOM (Quote & Ilustrasi) */
+/* Quote & Ilustrasi */
 .sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
 .sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
 .sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
 
-/* HEADER ATAS */
+/* =========================================
+   DESAIN KONTEN UTAMA
+   ========================================= */
 .top-header {
     display: flex; justify-content: space-between; align-items: center;
     background: white; padding: 1.5rem 2rem; border-radius: 16px;
@@ -120,7 +119,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .top-header h1 { margin: 0; font-size: 1.6rem; font-weight: 900; color: var(--teal-dark); }
 .top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;}
 
-/* KPI CARDS */
 .kpi-card {
     background: white; border-radius: 16px; padding: 1.2rem;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center;
@@ -138,7 +136,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 900; line-height: 1.2;}
 .kpi-info p { margin: 0; font-size: 0.7rem; color: var(--text-muted); font-weight: 600;}
 
-/* KARTU MODUL */
 .module-card {
     background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid #E2E8F0;
     transition: all 0.3s ease; min-height: 110px; margin-bottom: 0.5rem;
@@ -149,12 +146,51 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .module-title { font-weight: 800; font-size: 1rem; color: #1E293B; margin-bottom: 0.2rem;}
 .module-desc { font-size: 0.75rem; color: #64748B; line-height: 1.4;}
 
-/* TOMBOL DEFAULT */
 .stButton > button { background: var(--teal); color: white; border-radius: 8px; font-weight: 800; width: 100%; border: none; padding: 0.5rem;}
 .stButton > button:hover { background: var(--teal-dark); color: white; border: none;}
-
-/* TABEL */
 .stDataFrame { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+
+/* =========================================
+   MEDIA QUERIES (RESPONSIVE DESIGN)
+   ========================================= */
+
+/* 1. Tampilan Desktop (Layar Lebar > 768px) */
+@media (min-width: 769px) {
+    /* Sembunyikan tombol panah buka/tutup sidebar di desktop */
+    [data-testid="collapsedControl"] { display: none; } 
+    /* Kunci lebar sidebar */
+    [data-testid="stSidebar"] {
+        min-width: 280px !important; max-width: 280px !important;
+        transform: translateX(0) !important; visibility: visible !important;
+    }
+}
+
+/* 2. Tampilan Mobile & Tablet (Layar Kecil <= 768px) */
+@media (max-width: 768px) {
+    /* Izinkan Streamlit menggunakan animasi geser (drawer) bawaan untuk sidebar */
+    [data-testid="stSidebar"] {
+        min-width: 250px !important; max-width: 250px !important;
+        transform: none !important; visibility: visible !important;
+    }
+    
+    /* Sesuaikan padding konten utama agar tidak sesak */
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    
+    /* Ubah layout header menjadi vertikal (atas-bawah) */
+    .top-header {
+        flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem;
+    }
+    .top-header h1 { font-size: 1.3rem; }
+    .top-header h2 { font-size: 1.2rem; }
+
+    /* Perkecil teks pada kartu statistik (KPI) */
+    .kpi-card { padding: 1rem; gap: 0.8rem; }
+    .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+    .kpi-info h2 { font-size: 1.5rem; }
+    
+    /* Perkecil padding pada kartu modul */
+    .module-card { padding: 1rem; min-height: auto; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -320,7 +356,7 @@ def halaman_login():
                         else: st.error(msg)
 
 # ================================================================
-# ROUTING & SIDEBAR (DESAIN PERSIS GAMBAR)
+# ROUTING & SIDEBAR
 # ================================================================
 if not st.session_state.logged_in:
     halaman_login()
