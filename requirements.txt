@@ -12,3 +12,4 @@ python-docx-ng
 fpdf2
 plotly
 streamlit-option-menu
+pytz
