@@ -280,7 +280,7 @@ def halaman_login():
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
         st.markdown("<br><br><h1 style='text-align:center; color:#0D9488; font-weight:900;'>🎓 SAA Analytics</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:#64748B; font-weight:600;'>Silakan masuk untuk mengakses dashboard</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align:center; color:#64748B; font-weight:600;'>PKM UKSW Nomor : 026/SPK-PM/RIK/08/2026</p>", unsafe_allow_html=True)
         
         tab_login, tab_daftar, tab_siswa = st.tabs(["🔐 Masuk", "📝 Daftar Akun", "🎒 Kuesioner Siswa"])
 
