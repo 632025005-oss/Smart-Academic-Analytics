@@ -180,20 +180,27 @@ h1, h2, h3, h4, .top-header h1, .kpi-info h2 {
 .stDataFrame { border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); }
 
 /* =========================================
-   FIX TOTAL: BACKGROUND MENU JADI TRANSPARAN DI SIDEBAR GELAP
+   FIX TOTAL: BACKGROUND MENU JADI HITAM
    ========================================= */
-.stCustomComponentV1 { background-color: transparent !important; }
-[data-testid="stSidebar"] ul.nav-pills { background-color: transparent !important; }
-[data-testid="stSidebar"] ul.nav-pills a.nav-link { 
-    background-color: transparent !important; 
-    color: white !important; 
-    border-radius: 999px !important; 
-    margin-bottom: 4px;
+.stCustomComponentV1 {
+    background-color: #000000 !important;
 }
-[data-testid="stSidebar"] ul.nav-pills a.nav-link.active { 
-    background-color: rgba(255,255,255,0.15) !important; 
-    color: white !important; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+[data-testid="stSidebar"] ul.nav-pills {
+    background-color: #000000 !important;
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link {
+    background-color: #000000 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    margin-bottom: 2px;
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link:hover {
+    background-color: #333333 !important; 
+}
+[data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
+    background-color: #444444 !important; 
+    color: white !important;
+    font-weight: 700;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -437,20 +444,20 @@ with st.sidebar:
         default_index=default_idx,
         key="sidebar_menu",
         styles={
-            "container": {"padding": "0!important", "background-color": "transparent !important"},
+            "container": {"padding": "0!important", "background-color": "#000000 !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
             "nav-link": {
                 "font-size": "15px", 
                 "text-align": "left", 
                 "margin": "0px", 
-                "--hover-color": "rgba(255,255,255,0.1)", 
+                "--hover-color": "#333333", 
                 "color": "white !important", 
                 "font-weight": "600", 
-                "background-color": "transparent !important",
-                "border-radius": "999px"
+                "background-color": "#000000 !important",
+                "border-radius": "8px"
             },
             "nav-link-selected": {
-                "background-color": "rgba(255,255,255,0.15) !important", 
+                "background-color": "#444444 !important", 
                 "color": "white !important", 
                 "font-weight": "700"
             },
@@ -574,7 +581,7 @@ elif st.session_state.current_page == "kausal":
         df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Tingkat Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Tingkat Kepentingan")
         
         fig2 = px.bar(df_shap, x="Tingkat Kepentingan", y="Faktor", orientation='h', 
-                      color_discrete_sequence=['var(--teal)'],
+                      color_discrete_sequence=['#007979'],
                       labels={"Tingkat Kepentingan": "Skor Kepentingan"})
         fig2.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig2, use_container_width=True)
