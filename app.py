@@ -211,7 +211,7 @@ h1, h2, h3, h4, .top-header h1, .kpi-info h2 {
 for key, val in {
     "logged_in": False, "user_nama": None, "user_role": None, 
     "database_siswa": [], "config": None, "log": [], "users": {},
-    "current_page": "home", "last_saved": None
+    "current_page": "home", "last_saved": None, "zip_data": None
 }.items():
     if key not in st.session_state: st.session_state[key] = val
 
@@ -318,6 +318,7 @@ def halaman_login():
                             
                             st.session_state.current_page = "home"
                             if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
+                            if "zip_data" in st.session_state: st.session_state.zip_data = None
                             
                             reload_data()
                             add_log("Login", username)
@@ -471,6 +472,7 @@ with st.sidebar:
         
         st.session_state.user_role = None
         st.session_state.current_page = "home"
+        st.session_state.zip_data = None
         if "sidebar_menu" in st.session_state: del st.session_state["sidebar_menu"]
         
         st.rerun()
@@ -478,6 +480,7 @@ with st.sidebar:
         new_page = mapping_menu.get(menu_choice)
         if new_page and st.session_state.current_page != new_page:
             st.session_state.current_page = new_page
+            st.session_state.zip_data = None # Reset zip setiap pindah halaman
             st.rerun()
 
     st.markdown("""
@@ -1085,25 +1088,41 @@ elif st.session_state.current_page == "rekomendasi":
 
     st.markdown("---")
     st.markdown("### 🗂️ Unduh Semua Laporan (Massal)")
+    
     if st.button("📦 Buat File ZIP (Semua Siswa)", use_container_width=True):
         with st.spinner("Sedang menyiapkan file ZIP..."):
             try:
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     for _, row in df_siswa.iterrows():
-                        s_nama = row["Nama"]
+                        s_nama = str(row["Nama"]) # Perbaikan string
                         s_profil = {"Self-Efficacy Akademik": float(row["Self-Efficacy"]), "Keterlibatan Orang Tua": float(row["Keterlibatan Ortu"]), "Harapan Orang Tua": float(row["Harapan Ortu"]), "Dukungan Sekolah": float(row["Dukungan Sekolah"]), "Motivasi Belajar": float(row["Motivasi"]), "Kecemasan Akademik": float(row["Kecemasan"]), "Fasilitas Sekolah": float(row["Fasilitas"]), "Kemalasan Belajar": float(row["Kemalasan"])}
                         s_selisih, s_kontribusi = analisis_kausal(float(row["Nilai Akademik"]), s_profil)
                         s_kat, _ = kategori_nilai(float(row["Nilai Akademik"]))
                         s_df_k = pd.DataFrame([{"Aspek": k, "Kontribusi": v} for k, v in s_kontribusi.items()]).sort_values("Kontribusi")
                         s_neg = s_df_k[s_df_k["Kontribusi"] < -0.1]; s_pos = s_df_k[s_df_k["Kontribusi"] > 0.1].sort_values("Kontribusi", ascending=False)
-                        s_data = {'nama': s_nama, 'kelas': row["Kelas"], 'absen': int(row["Absen"]), 'nilai': float(row["Nilai Akademik"]), 'kategori': s_kat, 'selisih': s_selisih, 'fp': s_pos.iloc[0] if len(s_pos) > 0 else None, 'fn': s_neg.iloc[0] if len(s_neg) > 0 else None, 'tindak': TINDAK}
+                        s_data = {'nama': s_nama, 'kelas': str(row["Kelas"]), 'absen': int(row["Absen"]), 'nilai': float(row["Nilai Akademik"]), 'kategori': s_kat, 'selisih': s_selisih, 'fp': s_pos.iloc[0] if len(s_pos) > 0 else None, 'fn': s_neg.iloc[0] if len(s_neg) > 0 else None, 'tindak': TINDAK}
                         file_buffer = buat_dokumen_word(s_data)
-                        zip_file.writestr(f"Laporan_{s_nama.replace(' ', '_')}.docx", file_buffer.getvalue())
+                        
+                        safe_filename = s_nama.replace(' ', '_').replace('/', '_')
+                        zip_file.writestr(f"Laporan_{safe_filename}.docx", file_buffer.getvalue())
+                
                 zip_buffer.seek(0)
+                st.session_state.zip_data = zip_buffer
                 st.success(f"Berhasil membuat ZIP berisi {len(df_siswa)} laporan Word!")
-                st.download_button(label="⬇️ Download Semua Laporan (.zip)", data=zip_buffer, file_name="Semua_Laporan_Siswa.zip", mime="application/zip")
-            except Exception as e: st.error(f"Gagal membuat ZIP: {e}")
+            except Exception as e: 
+                st.error(f"Gagal membuat ZIP: {e}")
+                st.session_state.zip_data = None
+
+    # Tombol download di luar blok 'if' agar persisten
+    if st.session_state.zip_data is not None:
+        st.download_button(
+            label="⬇️ Download Semua Laporan (.zip)", 
+            data=st.session_state.zip_data, 
+            file_name="Semua_Laporan_Siswa.zip", 
+            mime="application/zip",
+            use_container_width=True
+        )
 
 # ================================================================
 # MODUL 05: PENGATURAN
