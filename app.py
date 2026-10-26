@@ -58,63 +58,83 @@ def load_users():
 def save_users(u): _db_save_users(u)
 
 # ================================================================
-# PAGE CONFIG & CSS
+# PAGE CONFIG & CSS (GAYA WEB BARU)
 # ================================================================
 st.set_page_config(page_title="SAA Analytics", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-    --teal: #0D9488; --teal-dark: #0F766E; --gold: #F59E0B;
-    --bg: #F4F7F6; --text-main: #1E293B; --text-muted: #64748B; --card-bg: #FFFFFF;
+    --ink: #0b2a33;
+    --ink-2: #3c5660;
+    --paper: #f6f3ee;
+    --card: #ffffff;
+    --teal: #007979;
+    --teal-deep: #0b3c49;
+    --sun: #f4a261;
+    --sun-deep: #e07a3f;
+    --gold: #e0a43a;
+    --line: rgba(11,42,51,.10);
+    --shadow: 0 10px 30px rgba(11,42,51,.10);
+    --r: 18px;
 }
 
-html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--text-main); }
-.stApp { background-color: var(--bg); }
-.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1400px; }
+html, body, [class*="css"] { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    color: var(--ink); 
+}
+.stApp { background-color: var(--paper); }
+.block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1180px; }
 
 #MainMenu, footer { visibility: hidden; }
+
+/* =========================================
+   TIPOGRAFI (JUDUL)
+   ========================================= */
+h1, h2, h3, h4, .top-header h1, .kpi-info h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+.top-header h1 { color: var(--teal-deep); }
+.top-header p { color: var(--ink-2); font-weight: 500;}
 
 /* =========================================
    DESAIN SIDEBAR & MENU
    ========================================= */
 [data-testid="stSidebar"] {
-    background-color: #006B62 !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,60 Q30,90 60,60 T100,60 L100,100 L0,100 Z" fill="%23004d45"/></svg>') !important;
-    background-repeat: no-repeat !important;
-    background-position: bottom !important;
-    background-size: 100% 300px !important;
+    background: linear-gradient(160deg, var(--teal-deep), #0e4f58 60%, var(--teal)) !important;
     border-right: none;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
 .sb-logo { display: flex; align-items: center; gap: 15px; padding: 20px 20px 10px 20px; }
 .sb-logo-icon { display: flex; align-items: center; justify-content: center; }
-.sb-logo-text h2 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; }
+.sb-logo-text h2 { margin: 0; font-size: 1.8rem; font-family: 'Fraunces', serif; font-weight: 800; letter-spacing: -0.5px; }
 
 .sb-bottom { position: relative; padding: 20px; margin-top: 30px; text-align: center; }
-.sb-quote { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.2; color: #FDE68A; transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
+.sb-quote { font-family: 'Fraunces', serif; font-size: 1.6rem; line-height: 1.2; color: var(--sun); transform: rotate(-5deg); margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
 .sb-img { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
 
 /* =========================================
-   DESAIN KONTEN UTAMA
+   DESAIN KONTEN UTAMA (KARTU & KPI)
    ========================================= */
 .top-header {
     display: flex; justify-content: space-between; align-items: center;
-    background: white; padding: 1.5rem 2rem; border-radius: 16px;
-    margin-bottom: 1.5rem; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.05);
-    border: 1px solid #E2E8F0;
+    background: var(--card); padding: 1.5rem 2rem; border-radius: var(--r);
+    margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--line);
 }
-.top-header h1 { margin: 0; font-size: 1.6rem; font-weight: 900; color: var(--teal-dark); }
-.top-header p { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;}
+.top-header h1 { margin: 0; font-size: 2rem; }
 
 .kpi-card {
-    background: white; border-radius: 16px; padding: 1.2rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center;
-    gap: 1rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;
+    background: var(--card); border-radius: var(--r); padding: 1.2rem;
+    box-shadow: var(--shadow); display: flex; align-items: center;
+    gap: 1rem; border: 1px solid var(--line); margin-bottom: 1rem;
+    transition: transform 0.3s ease;
 }
+.kpi-card:hover { transform: translateY(-2px); }
 .kpi-icon {
     width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
 }
@@ -123,68 +143,56 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif; color: var(--tex
 .kpi-icon.orange { background: #FEF3C7; color: #D97706; }
 .kpi-icon.purple { background: #F3E8FF; color: #9333EA; }
 
-.kpi-info h4 { margin: 0; font-size: 0.75rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
-.kpi-info h2 { margin: 0; font-size: 1.8rem; color: var(--gold); font-weight: 900; line-height: 1.2;}
-.kpi-info p { margin: 0; font-size: 0.7rem; color: var(--text-muted); font-weight: 600;}
+.kpi-info h4 { margin: 0; font-size: 0.75rem; color: var(--ink-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+.kpi-info h2 { margin: 0; font-size: 2rem; color: var(--teal); line-height: 1.2;}
+.kpi-info p { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
 
 .module-card {
-    background: white; border-radius: 12px; padding: 1.2rem; border: 1px solid #E2E8F0;
-    transition: all 0.3s ease; min-height: 110px; margin-bottom: 0.5rem;
-    display: flex; flex-direction: column; justify-content: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    background: var(--card); border-radius: var(--r); padding: 1.5rem; border: 1px solid var(--line);
+    transition: all 0.3s ease; min-height: 120px; margin-bottom: 0.5rem;
+    display: flex; flex-direction: column; justify-content: flex-start; box-shadow: var(--shadow);
 }
-.module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.1); border-color: var(--teal); }
-.module-icon { font-size: 1.8rem; margin-bottom: 0.5rem;}
-.module-title { font-weight: 800; font-size: 1rem; color: #1E293B; margin-bottom: 0.2rem;}
-.module-desc { font-size: 0.75rem; color: #64748B; line-height: 1.4;}
-
-.stButton > button { background: var(--teal); color: white; border-radius: 8px; font-weight: 800; width: 100%; border: none; padding: 0.5rem;}
-.stButton > button:hover { background: var(--teal-dark); color: white; border: none;}
-.stDataFrame { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.module-card:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(11,42,51,.15); border-color: var(--teal); }
+.module-icon { font-size: 2rem; margin-bottom: 0.5rem;}
+.module-title { font-family: 'Fraunces', serif; font-weight: 800; font-size: 1.2rem; color: var(--teal-deep); margin-bottom: 0.4rem;}
+.module-desc { font-size: 0.85rem; color: var(--ink-2); line-height: 1.5;}
 
 /* =========================================
-   MEDIA QUERIES (RESPONSIVE DESIGN)
+   TOMBOL (PIL)
    ========================================= */
-@media (min-width: 769px) {
-    header { visibility: hidden; }
-    [data-testid="collapsedControl"] { display: none; } 
-    [data-testid="stSidebar"] {
-        min-width: 280px !important; max-width: 280px !important;
-        transform: translateX(0) !important; visibility: visible !important;
-    }
+.stButton > button { 
+    background: var(--teal); 
+    color: white; 
+    border-radius: 999px; 
+    font-weight: 700; 
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    width: 100%; 
+    border: none; 
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s ease;
 }
-
-@media (max-width: 768px) {
-    header { visibility: visible !important; background-color: transparent !important; }
-    [data-testid="collapsedControl"] { display: flex !important; visibility: visible !important; color: #0D9488 !important; }
-    [data-testid="stSidebar"] { min-width: 250px !important; max-width: 250px !important; }
-    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
-    
-    .top-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 1.2rem; }
-    .top-header h1 { font-size: 1.3rem; }
-    .top-header h2 { font-size: 1.2rem; }
-
-    .kpi-card { padding: 1rem; gap: 0.8rem; }
-    .kpi-icon { width: 40px; height: 40px; font-size: 1.2rem; }
-    .kpi-info h2 { font-size: 1.5rem; }
-    .module-card { padding: 1rem; min-height: auto; }
+.stButton > button:hover { 
+    background: var(--teal-deep); 
+    color: white; 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,121,121,0.3);
 }
+.stDataFrame { border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); }
 
 /* =========================================
-   FIX TOTAL: BACKGROUND MENU JADI HIJAU GELAP
+   FIX TOTAL: BACKGROUND MENU JADI TRANSPARAN DI SIDEBAR GELAP
    ========================================= */
-.stCustomComponentV1 {
-    background-color: transparent !important;
+.stCustomComponentV1 { background-color: transparent !important; }
+[data-testid="stSidebar"] ul.nav-pills { background-color: transparent !important; }
+[data-testid="stSidebar"] ul.nav-pills a.nav-link { 
+    background-color: transparent !important; 
+    color: white !important; 
+    border-radius: 999px !important; 
+    margin-bottom: 4px;
 }
-[data-testid="stSidebar"] ul.nav-pills {
-    background-color: #006B62 !important;
-}
-[data-testid="stSidebar"] ul.nav-pills a.nav-link {
-    background-color: #006B62 !important;
-    color: white !important;
-}
-[data-testid="stSidebar"] ul.nav-pills a.nav-link.active {
-    background-color: #004d45 !important;
-    color: white !important;
+[data-testid="stSidebar"] ul.nav-pills a.nav-link.active { 
+    background-color: rgba(255,255,255,0.15) !important; 
+    color: white !important; 
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 </style>
@@ -279,10 +287,10 @@ def input_kategori(key, fname, is_student=False):
 def halaman_login():
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("<br><br><h1 style='text-align:center; color:#0D9488; font-weight:900;'>🎓 SAA Analytics</h1>", unsafe_allow_html=True)
+        st.markdown("<br><br><h1 style='text-align:center; color:var(--teal-deep); font-size: 2.8rem;'>🎓 SAA Analytics</h1>", unsafe_allow_html=True)
         
-        # --- INI TEKS YANG SUDAH DIUBAH ---
-        st.markdown("<p style='text-align:center; color:#64748B; font-weight:600;'>PKM UKSW Nomor : 026/SPK-PM/RIK/08/2026</p>", unsafe_allow_html=True)
+        # --- TEKS LOGIN YANG SUDAH DIUBAH ---
+        st.markdown("<p style='text-align:center; color:var(--ink-2); font-weight: 600; font-size: 1.1rem;'>PKM UKSW Nomor : 026/SPK-PM/RIK/08/2026</p>", unsafe_allow_html=True)
         
         tab_login, tab_daftar, tab_siswa = st.tabs(["🔐 Masuk", "📝 Daftar Akun", "🎒 Kuesioner Siswa"])
 
@@ -359,6 +367,7 @@ def halaman_login():
                         ok, msg = update_kuesioner_siswa(k_nama, k_kelas, k_absen, profil)
                         if ok: st.success("🎉 Terima kasih! Data kamu sudah tersimpan. Terus semangat belajar!"); st.balloons()
                         else: st.error(msg)
+
 # ================================================================
 # ROUTING & SIDEBAR
 # ================================================================
@@ -377,7 +386,7 @@ with st.sidebar:
     logo_b64 = get_base64_image("logo_sekolah.png")
     
     if logo_b64:
-        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="width: 45px; height: 45px; object-fit: contain; background-color: white; border-radius: 8px; padding: 2px;">'
+        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="width: 45px; height: 45px; object-fit: contain; background-color: white; border-radius: 8px; padding: 3px;">'
     else:
         logo_html = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="45px" height="45px"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 10.91L5 13.18l7-3.82 7 3.82-7 3.73zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'
 
@@ -428,19 +437,20 @@ with st.sidebar:
         default_index=default_idx,
         key="sidebar_menu",
         styles={
-            "container": {"padding": "0!important", "background-color": "#006B62 !important"},
+            "container": {"padding": "0!important", "background-color": "transparent !important"},
             "icon": {"color": "white", "font-size": "18px"}, 
             "nav-link": {
                 "font-size": "15px", 
                 "text-align": "left", 
                 "margin": "0px", 
-                "--hover-color": "#005f57", 
+                "--hover-color": "rgba(255,255,255,0.1)", 
                 "color": "white !important", 
                 "font-weight": "600", 
-                "background-color": "#006B62 !important"
+                "background-color": "transparent !important",
+                "border-radius": "999px"
             },
             "nav-link-selected": {
-                "background-color": "#004d45 !important", 
+                "background-color": "rgba(255,255,255,0.15) !important", 
                 "color": "white !important", 
                 "font-weight": "700"
             },
@@ -465,7 +475,7 @@ with st.sidebar:
 
     st.markdown("""
     <div class="sb-bottom">
-        <div class="sb-quote">Belajar<br>Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
+        <div class="sb-quote">Belajar Hari Ini<br>Untuk Masa Depan<br>yang Lebih Baik ❤️</div>
         <img src="https://cdn-icons-png.flaticon.com/512/3145/3145765.png" class="sb-img" style="filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5));">
     </div>
     """, unsafe_allow_html=True)
@@ -481,7 +491,7 @@ if st.session_state.current_page == "home":
             <h1>👋 Halo, Selamat Datang {st.session_state.user_nama}!</h1>
             <p>Daftar lengkap informasi dan data analisis prestasi akademik Anda.</p>
         </div>
-        <div><h2 style="color:#0D9488; margin:0; font-weight:900;">SMPN 6 Salatiga 🏫</h2></div>
+        <div><h2 style="color:var(--sun-deep); margin:0; font-family:'Fraunces', serif;">SMPN 6 Salatiga 🏫</h2></div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -508,7 +518,7 @@ if st.session_state.current_page == "home":
         st.progress(persentase)
         st.write(f"**{sudah_isi}** dari **{total_siswa}** siswa telah mengisi kuesioner.")
 
-    st.markdown("<br><hr>", unsafe_allow_html=True)
+    st.markdown("<br><hr style='border-color: var(--line);'>", unsafe_allow_html=True)
     
     st.markdown("### Modul Navigasi")
     mods = [
@@ -555,7 +565,7 @@ elif st.session_state.current_page == "kausal":
         fig1 = px.bar(df_ate, x="Dampak (Poin)", y="Faktor", orientation='h', 
                       color="Dampak (Poin)", color_continuous_scale="RdBu",
                       labels={"Dampak (Poin)": "Dampak terhadap Nilai"})
-        fig1.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        fig1.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig1, use_container_width=True)
 
         st.markdown("### 2. Faktor yang Paling Sering Dipakai untuk Memprediksi Nilai (Tingkat Kepentingan)")
@@ -564,9 +574,9 @@ elif st.session_state.current_page == "kausal":
         df_shap = pd.DataFrame({"Faktor": list(KEPENTINGAN_DATA.keys()), "Tingkat Kepentingan": list(KEPENTINGAN_DATA.values())}).sort_values("Tingkat Kepentingan")
         
         fig2 = px.bar(df_shap, x="Tingkat Kepentingan", y="Faktor", orientation='h', 
-                      color_discrete_sequence=['#0D9488'],
+                      color_discrete_sequence=['var(--teal)'],
                       labels={"Tingkat Kepentingan": "Skor Kepentingan"})
-        fig2.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        fig2.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown("### 💡 Kesimpulan untuk Guru")
@@ -614,13 +624,13 @@ elif st.session_state.current_page == "kausal":
         
         fig_radar = go.Figure()
         fig_radar.add_trace(go.Scatterpolar(r=df_radar["Rata-rata Sekolah"], theta=df_radar["Faktor"], fill='toself', name='Rata-rata Sekolah', line_color='#94A3B8'))
-        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#0D9488'))
+        fig_radar.add_trace(go.Scatterpolar(r=df_radar["Nilai Siswa"], theta=df_radar["Faktor"], fill='toself', name=f'Profil {nama}', line_color='#007979'))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True, margin=dict(l=40, r=40, t=40, b=40), height=400)
         st.plotly_chart(fig_radar, use_container_width=True)
 
         st.markdown("**Grafik Dampak Faktor (Poin)**")
         fig_bar = px.bar(df_k, x="Dampak (Poin)", y="Faktor", orientation='h', color="Dampak (Poin)", color_continuous_scale="RdBu")
-        fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0))
+        fig_bar.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_bar, use_container_width=True)
 
         st.markdown("**Tabel Detail**")
@@ -655,10 +665,10 @@ elif st.session_state.current_page == "prediksi":
             kat, warna = kategori_nilai(score)
             
             st.markdown(f"""
-            <div style="background:white; border-left:5px solid {warna}; padding:2rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); text-align:center; margin-top:20px;">
-                <h3 style="margin:0; color:#64748B;">Hasil Prediksi Nilai Akademik</h3>
-                <h1 style="font-size:4rem; color:{warna}; margin:10px 0;">{score:.2f}</h1>
-                <h4 style="margin:0; color:{warna};">Kategori: {kat}</h4>
+            <div style="background:var(--card); border-left:5px solid {warna}; padding:2rem; border-radius:var(--r); box-shadow:var(--shadow); text-align:center; margin-top:20px; border: 1px solid var(--line);">
+                <h3 style="margin:0; color:var(--ink-2); font-family:'Plus Jakarta Sans';">Hasil Prediksi Nilai Akademik</h3>
+                <h1 style="font-size:4rem; color:{warna}; margin:10px 0; font-family:'Fraunces', serif;">{score:.2f}</h1>
+                <h4 style="margin:0; color:{warna}; font-family:'Fraunces', serif;">Kategori: {kat}</h4>
             </div>
             """, unsafe_allow_html=True)
             st.info("💡 *Angka di atas adalah simulasi (Mockup) menggunakan perhitungan linear sederhana. Kamu bisa mengganti bagian logika ini dengan model Random Forest (.pkl) milikmu.*")
@@ -902,12 +912,12 @@ elif st.session_state.current_page == "rekomendasi":
     narasi_pos = f"Kekuatan utama terletak pada <b style='color:#10B981;'>{fp['Aspek']}</b> (kontribusi +{fp['Kontribusi']:.2f} poin)." if fp is not None else "Belum ada faktor kekuatan dominan."
 
     st.markdown(f"""
-    <div style="background:white; border-left:5px solid {warna_kategori}; padding:1.5rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.03); margin-bottom:1rem;">
+    <div style="background:var(--card); border-left:5px solid {warna_kategori}; padding:1.5rem; border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:1rem; border: 1px solid var(--line);">
         <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
             <div style="width:56px;height:56px;border-radius:15px;background:{warna_kategori};color:white;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;">{"".join(x[0] for x in nama.split()[:2]).upper()}</div>
-            <div><div style="font-weight:800;font-size:1.3rem; color:#1E293B;">{nama}</div><div style="color:#64748B;font-size:.8rem;">{kelas} - Absen {absen:02d} - Nilai {nilai:.2f}</div></div>
+            <div><div style="font-weight:800;font-size:1.3rem; color:var(--teal-deep); font-family:'Fraunces', serif;">{nama}</div><div style="color:var(--ink-2);font-size:.85rem;">{kelas} - Absen {absen:02d} - Nilai {nilai:.2f}</div></div>
         </div>
-        <div style="font-size:.95rem;line-height:1.75;color:#1E293B;">
+        <div style="font-size:.95rem;line-height:1.75;color:var(--ink);">
             Nilai saat ini <b>{abs(selisih):.2f} poin {posisi} rata-rata sekolah</b> ({RATA_RATA_NILAI:.2f}).<br><br>{narasi_neg}<br><br>{narasi_pos}<br><br>
             <b>Kategori:</b> <span style="color:{warna_kategori};font-weight:800;">{kategori}</span>
         </div>
@@ -925,11 +935,11 @@ elif st.session_state.current_page == "rekomendasi":
                 gap_val = row["Selisih"]
                 level = "Segera" if gap_val < -1 else "Perhatian" if gap_val < -0.5 else "Pantau"
                 st.markdown(f"""
-                <div style="background:white; border-top:4px solid #EF5B67; padding:1.5rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.03); min-height:200px;">
+                <div style="background:var(--card); border-top:4px solid #EF5B67; padding:1.5rem; border-radius:var(--r); box-shadow:var(--shadow); min-height:200px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);">
                     <div style="font-size:.65rem;font-weight:800;letter-spacing:1.5px;color:#EF5B67;">PRIORITAS {i + 1}</div>
-                    <div style="font-weight:800;font-size:1rem;margin:.6rem 0 .3rem; color:#1E293B;">{row["Aspek"]}</div>
-                    <div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem;">{level}</div>
-                    <div style="font-size:.75rem;line-height:1.6;color:#475467;">
+                    <div style="font-weight:800;font-size:1.1rem;margin:.6rem 0 .3rem; color:var(--teal-deep); font-family:'Fraunces', serif;">{row["Aspek"]}</div>
+                    <div style="font-size:.75rem;color:var(--ink-2);margin-bottom:.5rem;">{level}</div>
+                    <div style="font-size:.8rem;line-height:1.6;color:var(--ink-2);">
                         Nilai siswa: <b>{row["Nilai_Siswa"]:.2f}</b><br>Rata-rata: <b>{row["Baseline"]:.2f}</b><br>
                         <span style="color:#EF5B67;font-weight:700;">Selisih: {row["Selisih"]:+.2f}</span>
                     </div>
